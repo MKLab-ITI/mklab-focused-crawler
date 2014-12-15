@@ -15,7 +15,6 @@ import org.apache.lucene.analysis.shingle.ShingleFilter;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
-import org.apache.lucene.util.Version;
 
 import edu.stanford.nlp.ling.TaggedWord;
 import gr.iti.mklab.framework.common.domain.Entity;

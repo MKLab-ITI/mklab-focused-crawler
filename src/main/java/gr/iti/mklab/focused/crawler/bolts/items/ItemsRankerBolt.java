@@ -20,6 +20,7 @@ public class ItemsRankerBolt extends BaseRichBolt {
 	 * 
 	 */
 	private static final long serialVersionUID = -2548434425109192911L;
+	
 	private OutputCollector _collector;
 	private String inputField;
 
