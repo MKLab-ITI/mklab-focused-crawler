@@ -4,10 +4,10 @@ import gr.iti.mklab.framework.abstractions.socialmedia.items.TwitterItem;
 import gr.iti.mklab.framework.common.domain.Account;
 import gr.iti.mklab.framework.common.domain.Item;
 import gr.iti.mklab.framework.common.domain.Keyword;
+import gr.iti.mklab.framework.common.domain.feeds.AccountFeed;
 import gr.iti.mklab.framework.common.domain.feeds.Feed;
 import gr.iti.mklab.framework.common.domain.feeds.LocationFeed;
 import gr.iti.mklab.framework.common.domain.feeds.KeywordsFeed;
-import gr.iti.mklab.framework.common.domain.feeds.SourceFeed;
 import gr.iti.mklab.framework.common.domain.feeds.Feed.FeedType;
 
 import java.util.ArrayList;
@@ -133,8 +133,8 @@ public class TwitterStreamBolt extends BaseRichBolt {
 					keys.add(keyword.getName());
 				}
 			}
-			else if(feed.getFeedtype().equals(FeedType.SOURCE)) {
-				Account source = ((SourceFeed) feed).getAccount();		
+			else if(feed.getFeedtype().equals(FeedType.ACCOUNT)) {
+				Account source = ((AccountFeed) feed).getAccount();		
 				if(source.getId() == null) {
 					try {
 						users.add(source.getName());
@@ -212,7 +212,7 @@ public class TwitterStreamBolt extends BaseRichBolt {
 					
 					Item item = new Item();
 					item.setId(id);
-					item.setStreamId("Twitter");
+					item.setSource("Twitter");
 					
 					_collector.emit(new Values(item));
 				}

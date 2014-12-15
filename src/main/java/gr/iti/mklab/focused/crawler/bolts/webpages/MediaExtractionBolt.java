@@ -206,7 +206,7 @@ public class MediaExtractionBolt extends BaseRichBolt {
 			if(streamUser == null || userid == null) {
 				streamUser = retriever.getStreamUser(userid);
 				if(streamUser == null) {
-					throw new Exception("Missing " + mediaItem.getStreamId() + " user: " + userid);
+					throw new Exception("Missing " + mediaItem.getSource() + " user: " + userid);
 				}
 				mediaItem.setUser(streamUser);
 				mediaItem.setUserId(streamUser.getId());

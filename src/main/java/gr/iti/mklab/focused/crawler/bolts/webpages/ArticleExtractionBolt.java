@@ -456,7 +456,7 @@ public class ArticleExtractionBolt extends BaseRichBolt {
 			int imageHash = (url.hashCode() & 0x7FFFFFFF);
 			
 			mediaItem.setId("Web#" + imageHash);
-			mediaItem.setStreamId("Web");
+			mediaItem.setSource("Web");
 			mediaItem.setType("image");
 			mediaItem.setThumbnail(url.toString());
 			
@@ -536,7 +536,7 @@ public class ArticleExtractionBolt extends BaseRichBolt {
 			int imageHash = (urlStr.hashCode() & 0x7FFFFFFF);
 			
 			mediaItem.setId("Web#" + imageHash);
-			mediaItem.setStreamId("Web");
+			mediaItem.setSource("Web");
 			mediaItem.setType("image");
 			mediaItem.setThumbnail(url.toString());
 			
@@ -583,7 +583,7 @@ public class ArticleExtractionBolt extends BaseRichBolt {
 					
 					int imageHash = (url.hashCode() & 0x7FFFFFFF);
 					mediaItem.setId("Web#"+pageHash+"_"+imageHash);
-					mediaItem.setStreamId("Web");
+					mediaItem.setSource("Web");
 					mediaItem.setType("video");
 					mediaItem.setThumbnail(url.toString());
 					

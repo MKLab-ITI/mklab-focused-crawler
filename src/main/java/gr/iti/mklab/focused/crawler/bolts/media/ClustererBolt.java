@@ -14,15 +14,14 @@ import org.apache.log4j.Logger;
 import org.apache.solr.client.solrj.impl.HttpSolrServer;
 import org.apache.solr.common.SolrInputDocument;
 
-import gr.iti.mklab.focused.crawler.models.ImageVector;
-import gr.iti.mklab.framework.client.dao.MediaClusterDAO;
+import gr.iti.mklab.framework.client.dao.ClusterDAO;
 import gr.iti.mklab.framework.client.dao.MediaItemDAO;
-import gr.iti.mklab.framework.client.dao.impl.MediaClusterDAOImpl;
+import gr.iti.mklab.framework.client.dao.impl.ClusterDAOImpl;
 import gr.iti.mklab.framework.client.dao.impl.MediaItemDAOImpl;
 import gr.iti.mklab.framework.client.search.visual.JsonResultSet;
 import gr.iti.mklab.framework.client.search.visual.JsonResultSet.JsonResult;
 import gr.iti.mklab.framework.client.search.visual.VisualIndexHandler;
-import gr.iti.mklab.framework.common.domain.MediaCluster;
+import gr.iti.mklab.framework.common.domain.Cluster;
 import gr.iti.mklab.framework.common.domain.MediaItem;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -49,7 +48,7 @@ public class ClustererBolt extends BaseRichBolt {
 	private String clustersCollectionName;
 	
 	private MediaItemDAO _mediaItemDAO = null;
-	private MediaClusterDAO _mediaClusterDAO = null;
+	private ClusterDAO _mediaClusterDAO = null;
 
 	private Queue<Pair<?, ?>> _mQ = new LinkedBlockingQueue<Pair<?, ?>>();
 
@@ -105,7 +104,7 @@ public class ClustererBolt extends BaseRichBolt {
 			_mediaItemDAO = new MediaItemDAOImpl(mongoHost, mediaItemsDbName, mediaItemsCollectionName);
 			
 			if(clustersDbName != null && clustersCollectionName != null) {
-				_mediaClusterDAO = new MediaClusterDAOImpl(mongoHost, clustersDbName, clustersCollectionName);
+				_mediaClusterDAO = new ClusterDAOImpl(mongoHost, clustersDbName, clustersCollectionName);
 			}
 			
 			_visualIndex = new VisualIndexHandler(vIndexHostname, vIndexCollection);
@@ -230,9 +229,9 @@ public class ClustererBolt extends BaseRichBolt {
 					docs.add(doc);
 					
 					if(_mediaClusterDAO != null) {
-						MediaCluster cluster = new MediaCluster(clusterId.toString());
+						Cluster cluster = new Cluster(clusterId.toString());
 						cluster.addMember(mId);
-						_mediaClusterDAO.addMediaCluster(cluster);
+						_mediaClusterDAO.addCluster(cluster);
 					}
 				}
 				
@@ -270,7 +269,7 @@ public class ClustererBolt extends BaseRichBolt {
 						docs.add(doc);
 						
 						if(_mediaClusterDAO != null) {
-							_mediaClusterDAO.addMediaItemInCluster(clusterId, mId);
+							_mediaClusterDAO.addItemInCluster(clusterId, mId);
 						}
 						
 					}

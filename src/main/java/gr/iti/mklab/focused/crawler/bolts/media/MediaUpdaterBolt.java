@@ -91,8 +91,6 @@ public class MediaUpdaterBolt extends BaseRichBolt {
 					existedMedia++;
 					
 					UpdateItem update = new UpdateItem();
-					update.setField("vIndexed", mediaItem.isVisualIndexed());
-					update.setField("status", mediaItem.isVisualIndexed() ? "indexed" : "failed");
 				
 					Integer width = mediaItem.getWidth();
 					Integer height = mediaItem.getHeight();

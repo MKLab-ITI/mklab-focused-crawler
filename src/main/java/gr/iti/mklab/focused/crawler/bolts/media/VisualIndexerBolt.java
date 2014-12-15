@@ -127,7 +127,6 @@ public class VisualIndexerBolt extends BaseRichBolt {
 				_logger.error("Failed fetch media item " + id + ". URL=" + url +  
 						". Http code: " + code + " Error: " + status.getReasonPhrase());
 				
-				mediaItem.setVisualIndexed(false);
 				_collector.emit(tuple(mediaItem, imageVector, nearestMediaItem));
 				
 				return;
@@ -138,7 +137,6 @@ public class VisualIndexerBolt extends BaseRichBolt {
 				_logger.error("Entity is null for " + id + ". URL=" + url +  
 						". Http code: " + code + " Error: " + status.getReasonPhrase());
 				
-				mediaItem.setVisualIndexed(false);
 				_collector.emit(tuple(mediaItem, imageVector, nearestMediaItem));
 				
 				return;
@@ -175,13 +173,11 @@ public class VisualIndexerBolt extends BaseRichBolt {
 				
 			}
 			
-			mediaItem.setVisualIndexed(true);
 			_collector.emit(tuple(mediaItem, imageVector, nearestMediaItem));
 			
 		} 
 		catch (Exception e) {
 			_logger.error(e);
-			mediaItem.setVisualIndexed(false);
 			_collector.emit(tuple(mediaItem, imageVector, nearestMediaItem));
 		}
 		finally {

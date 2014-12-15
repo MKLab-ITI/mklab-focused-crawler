@@ -117,7 +117,6 @@ public class FeatureExtractorBolt extends BaseRichBolt {
 				_logger.error("Failed fetch media item " + id + ". URL=" + url +  
 						". Http code: " + code + " Error: " + status.getReasonPhrase());
 				
-				mediaItem.setVisualIndexed(false);
 				_collector.emit(tuple(mediaItem, imageVector));
 				
 				return;
@@ -128,7 +127,6 @@ public class FeatureExtractorBolt extends BaseRichBolt {
 				_logger.error("Entity is null for " + id + ". URL=" + url +  
 						". Http code: " + code + " Error: " + status.getReasonPhrase());
 				
-				mediaItem.setVisualIndexed(false);
 				_collector.emit(tuple(mediaItem, imageVector));
 				
 				return;

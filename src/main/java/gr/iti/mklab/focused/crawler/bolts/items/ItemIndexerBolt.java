@@ -81,7 +81,7 @@ public class ItemIndexerBolt extends BaseRichBolt {
 						queue.drainTo(items);
 					}
 					
-					boolean inserted = _solrItemHandler.insertItems(items);
+					boolean inserted = _solrItemHandler.insert(items);
 					
 					if(inserted) {
 						_logger.info(items.size() + " items indexed in Solr");
