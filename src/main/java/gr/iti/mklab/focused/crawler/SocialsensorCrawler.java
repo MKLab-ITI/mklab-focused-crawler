@@ -6,7 +6,6 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.log4j.Logger;
 
-import gr.iti.mklab.focused.crawler.bolts.media.ClustererBolt;
 import gr.iti.mklab.focused.crawler.bolts.media.MediaItemDeserializationBolt;
 import gr.iti.mklab.focused.crawler.bolts.media.MediaTextIndexerBolt;
 import gr.iti.mklab.focused.crawler.bolts.media.MediaUpdaterBolt;
@@ -111,13 +110,8 @@ public class SocialsensorCrawler {
 		
 		String mongodbHostname = config.getString("mongodb.hostname");
 		String mediaItemsDB = config.getString("mongodb.mediaItemsDB");
-		String mediaItemsCollection = config.getString("mongodb.mediaItemsCollection");
 		String streamUsersDB = config.getString("mongodb.streamUsersDB");
-		String streamUsersCollection = config.getString("mongodb.streamUsersCollection");
 		String webPagesDB = config.getString("mongodb.webPagesDB");
-		String webPagesCollection = config.getString("mongodb.webPagesCollection");
-		//String clustersDB = config.getString("mongodb.clustersDB", "Prototype");
-		//String clustersCollection = config.getString("mongodb.clustersCollection", "MediaClusters");
 		
 		String visualIndexHostname = config.getString("visualindex.hostname");
 		String visualIndexCollection = config.getString("visualindex.collection");

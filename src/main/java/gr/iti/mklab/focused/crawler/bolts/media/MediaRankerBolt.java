@@ -1,7 +1,6 @@
 package gr.iti.mklab.focused.crawler.bolts.media;
 
 import gr.iti.mklab.framework.common.domain.MediaItem;
-import gr.iti.mklab.framework.common.factories.ObjectFactory;
 
 import java.util.Map;
 
@@ -38,7 +37,7 @@ public class MediaRankerBolt extends BaseRichBolt {
 
 	public void execute(Tuple tuple) {
 		String json = tuple.getStringByField(inputField);
-		MediaItem mediaItem = ObjectFactory.toObject(json, MediaItem.class);
+		MediaItem mediaItem = MediaItem.toObject(json, MediaItem.class);
 
 		Long shares = mediaItem.getShares();
 		

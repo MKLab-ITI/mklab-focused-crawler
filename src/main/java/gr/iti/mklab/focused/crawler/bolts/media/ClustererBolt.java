@@ -17,8 +17,6 @@ import org.mongodb.morphia.dao.BasicDAO;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
 
-import gr.iti.mklab.framework.client.dao.ClusterDAO;
-import gr.iti.mklab.framework.client.dao.MediaItemDAO;
 import gr.iti.mklab.framework.client.mongo.DAOFactory;
 import gr.iti.mklab.framework.client.search.visual.JsonResultSet;
 import gr.iti.mklab.framework.client.search.visual.JsonResultSet.JsonResult;

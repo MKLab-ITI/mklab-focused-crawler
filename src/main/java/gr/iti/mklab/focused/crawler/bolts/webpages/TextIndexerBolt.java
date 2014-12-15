@@ -79,7 +79,7 @@ public class TextIndexerBolt extends BaseRichBolt {
 						continue;
 					}
 					
-					boolean inserted = _solrWebPageHandler.insertWebPages(webPages);
+					boolean inserted = _solrWebPageHandler.insert(webPages);
 					
 					if(inserted) {
 						logger.info(webPages.size() + " web pages indexed in Solr");

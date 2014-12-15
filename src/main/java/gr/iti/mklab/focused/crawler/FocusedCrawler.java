@@ -101,11 +101,8 @@ public class FocusedCrawler {
 		
 		String mongodbHostname = config.getString("mongodb.hostname", "xxx.xxx.xxx.xxx");
 		String mediaItemsDB = config.getString("mongodb.mediaItemsDB", "Prototype");
-		String mediaItemsCollection = config.getString("mongodb.mediaItemsCollection", "MediaItems");
 		String streamUsersDB = config.getString("mongodb.streamUsersDB", "Prototype");
-		String streamUsersCollection = config.getString("mongodb.streamUsersCollection", "StreamUsers");
 		String webPagesDB = config.getString("mongodb.webPagesDB", "Prototype");
-		String webPagesCollection = config.getString("mongodb.webPagesCollection", "WebPages");
 		
 		String textIndexHostname = config.getString("textindex.hostname", "xxx.xxx.xxx.xxx:8080/solr");
 		String textIndexCollection = config.getString("textindex.collections.webpages", "WebPages");

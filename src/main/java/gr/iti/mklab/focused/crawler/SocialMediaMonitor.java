@@ -22,9 +22,9 @@ import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.topology.base.BaseRichSpout;
 
-public class StreamMonitor {
+public class SocialMediaMonitor {
 
-	private static Logger logger = Logger.getLogger(StreamMonitor.class);
+	private static Logger logger = Logger.getLogger(SocialMediaMonitor.class);
 	
 	/**
 	 *	@author Manos Schinas - manosetro@iti.gr
@@ -114,7 +114,7 @@ public class StreamMonitor {
 				
 		builder.setBolt("itemDeserializer", itemDeserializer, 4).shuffleGrouping("itemsSpout");
 		builder.setBolt("entityExtractor", entityExtractor, 4).shuffleGrouping("itemDeserializer");
-		//builder.setBolt("posTagger", posTagger, 4).shuffleGrouping("entityExtractor");
+		builder.setBolt("posTagger", posTagger, 4).shuffleGrouping("entityExtractor");
 		builder.setBolt("tokenizer", tokenizer, 8).shuffleGrouping("entityExtractor");
 		
 		builder.setBolt("eventDetector", eventDetector, 1).shuffleGrouping("tokenizer");

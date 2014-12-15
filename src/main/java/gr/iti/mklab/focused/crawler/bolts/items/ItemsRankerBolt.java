@@ -1,7 +1,6 @@
 package gr.iti.mklab.focused.crawler.bolts.items;
 
 import gr.iti.mklab.framework.common.domain.Item;
-import gr.iti.mklab.framework.common.factories.ObjectFactory;
 
 import java.util.Map;
 
@@ -39,7 +38,7 @@ public class ItemsRankerBolt extends BaseRichBolt {
 
 	public void execute(Tuple tuple) {
 		String json = tuple.getStringByField(inputField);
-		Item item = ObjectFactory.toObject(json, Item.class);
+		Item item = Item.toObject(json, Item.class);
 
 		Long shares = item.getShares();
 		

@@ -108,7 +108,7 @@ public class TokenizationBolt extends BaseRichBolt {
 					String tag = taggedWord.tag();
 					String word = taggedWord.word();
 					
-					
+					tokens.add(word + "#" + tag);
 				}
 			}
 		}

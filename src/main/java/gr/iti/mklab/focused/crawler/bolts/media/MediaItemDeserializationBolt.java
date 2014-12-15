@@ -2,7 +2,6 @@ package gr.iti.mklab.focused.crawler.bolts.media;
 
 import static backtype.storm.utils.Utils.tuple;
 import gr.iti.mklab.framework.common.domain.MediaItem;
-import gr.iti.mklab.framework.common.factories.ObjectFactory;
 
 import java.util.Map;
 
@@ -43,7 +42,7 @@ public class MediaItemDeserializationBolt extends BaseRichBolt {
 	public void execute(Tuple input) {
 		try {
 			String json = input.getStringByField(inputField);
-			MediaItem mediaItem = ObjectFactory.toObject(json, MediaItem.class);
+			MediaItem mediaItem = MediaItem.toObject(json, MediaItem.class);
 			if(mediaItem != null) {
 				_collector.emit(tuple(mediaItem));
 			}

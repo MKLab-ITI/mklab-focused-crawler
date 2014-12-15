@@ -88,7 +88,7 @@ public class MediaTextIndexerBolt extends BaseRichBolt {
 					if(mItems.isEmpty())
 						continue;
 					
-					boolean inserted = _solrMediaHandler.insertMediaItems(mItems);
+					boolean inserted = _solrMediaHandler.insert(mItems);
 					
 					if(inserted) {
 						logger.info(mItems.size() + " media items indexed in Solr.");

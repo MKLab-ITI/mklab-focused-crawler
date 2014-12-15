@@ -2,7 +2,6 @@ package gr.iti.mklab.focused.crawler.bolts.webpages;
 
 import static backtype.storm.utils.Utils.tuple;
 import gr.iti.mklab.framework.common.domain.WebPage;
-import gr.iti.mklab.framework.common.factories.ObjectFactory;
 
 import java.util.Map;
 
@@ -42,7 +41,7 @@ public class WebPageDeserializationBolt extends BaseRichBolt {
 	public void execute(Tuple input) {
 		try {
 			String json = input.getStringByField(inputField);
-			WebPage webPage = ObjectFactory.toObject(json, WebPage.class);
+			WebPage webPage = WebPage.toObject(json, WebPage.class);
 			if(webPage != null) {
 				_collector.emit(tuple(webPage));
 			}

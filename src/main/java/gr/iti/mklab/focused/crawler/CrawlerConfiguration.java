@@ -3,7 +3,6 @@ package gr.iti.mklab.focused.crawler;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -11,19 +10,17 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.mongodb.morphia.dao.BasicDAO;
+import org.mongodb.morphia.query.Query;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-import gr.iti.mklab.framework.client.mongo.MongoHandler;
-import gr.iti.mklab.framework.common.domain.Item;
+import gr.iti.mklab.framework.client.mongo.DAOFactory;
 import gr.iti.mklab.framework.common.domain.config.Configuration;
-import gr.iti.mklab.framework.common.factories.ObjectFactory;
 
 public class CrawlerConfiguration extends Configuration {
 	
@@ -66,44 +63,44 @@ public class CrawlerConfiguration extends Configuration {
 	}
 	
 	
-	public Configuration getStreamConfig(String streamId){
+	public Configuration getStreamConfig(String streamId) {
 		return streamConfigMap.get(streamId);
 	}
 	
-	public void setStorageConfig(String storageId, Configuration config){
+	public void setStorageConfig(String storageId, Configuration config) {
 		storageConfigMap.put(storageId,config);
 	}
 	
-	public Configuration getStorageConfig(String storageId){
+	public Configuration getStorageConfig(String storageId) {
 		return storageConfigMap.get(storageId);
 	}
 	
-	public void setSubscriberConfig(String subscriberId, Configuration config){
+	public void setSubscriberConfig(String subscriberId, Configuration config) {
 		this.subscriberConfigMap.put(subscriberId, config);
 	}
 	
-	public Configuration getSubscriberConfig(String subscriberId){
+	public Configuration getSubscriberConfig(String subscriberId) {
 		return subscriberConfigMap.get(subscriberId);
 	}
 	
-	public void setFilterConfig(String filterId, Configuration config){
+	public void setFilterConfig(String filterId, Configuration config) {
 		filterConfigMap.put(filterId, config);
 	}
 	
-	public Configuration getFilterConfig(String filterId){
+	public Configuration getFilterConfig(String filterId) {
 		return filterConfigMap.get(filterId);
 	}
 	
-	public void setProcessorConfig(String processorId, Configuration config){
+	public void setProcessorConfig(String processorId, Configuration config) {
 		processorsConfigMap.put(processorId, config);
 	}
 	
-	public Configuration getProcessorConfig(String processorId){
+	public Configuration getProcessorConfig(String processorId) {
 		return processorsConfigMap.get(processorId);
 	}
 	
-	public void setParameter(String name, String value){
-		super.setParameter(name,value);
+	public void setParameter(String name, String value) {
+		super.setParameter(name, value);
 	}
 	
 	public String getParameter(String name) {
@@ -122,50 +119,31 @@ public class CrawlerConfiguration extends Configuration {
 		return subscriberConfigMap.keySet();
 	}
 	
-	public Set<String> getFilterIds(){
+	public Set<String> getFilterIds() {
 		return filterConfigMap.keySet();
 	}
 	
-	public Set<String> getProcessorsIds(){
+	public Set<String> getProcessorsIds() {
 		return processorsConfigMap.keySet();
 	}
 	
-	public static Configuration readFromMongo(String host, String dbName, String collectionName) 
-			throws Exception {
-		MongoHandler mongo = new MongoHandler(host, dbName, collectionName, null);
+	public static Configuration readFromMongo(String hostname, String dbName, String collectionName) throws Exception {
+		DAOFactory daoFactory = new DAOFactory();
+		BasicDAO<Configuration, String> dao = daoFactory.getDAO(hostname, dbName, Configuration.class);
 		
-		String json = mongo.findOne();
-		Gson gson = new GsonBuilder()
-        	.excludeFieldsWithoutExposeAnnotation()
-        	.create();
-		Configuration config = gson.fromJson(json, Configuration.class);
+		Query<Configuration> q = dao.createQuery();
+		Configuration config = dao.findOne(q);
         return config;
 	}
 	
-	public void readItemsFromMongo(String host, String dbName, String collection, List<Item> mongoItems) throws Exception{
-		MongoHandler mongo = new MongoHandler(host, dbName, collection, null);
-		List<String> jsonItems = mongo.findMany(-1);
-	
-		for(String json : jsonItems){
-			
-			Item item = ObjectFactory.create(json);
-			
-			mongoItems.add(item);
-			
-		}
+	public void saveToMongo(String hostname, String dbName, String collectionName) throws Exception {
+		DAOFactory daoFactory = new DAOFactory();
+		BasicDAO<Configuration, String> dao = daoFactory.getDAO(hostname, dbName, Configuration.class);
 		
+		dao.save(this);
 	}
 	
-	public void saveToMongo(String host, String dbName, String collectionName) 
-			throws Exception {
-		MongoHandler mongo = new MongoHandler(host, dbName, collectionName, null);
-		
-		mongo.insert(this);
-		
-	}
-	
-	public static Configuration readFromFile(File file) 
-			    throws ParserConfigurationException, SAXException, IOException {
+	public static Configuration readFromFile(File file) throws ParserConfigurationException, SAXException, IOException {
 		SAXParserFactory factory = SAXParserFactory.newInstance();
 		SAXParser parser = factory.newSAXParser();
 		ParseHandler handler = new ParseHandler();
@@ -176,7 +154,7 @@ public class CrawlerConfiguration extends Configuration {
 	
 	private static class ParseHandler extends DefaultHandler {
 
-		private enum ParseState{
+		private enum ParseState {
 			IDLE,
 			IN_CONFIG_PARAM,
 			IN_CONFIG_STREAM,

@@ -115,9 +115,7 @@ public class Crawler {
 		// MongoDB
 		String mongodbHostname = config.getString("mongodb.hostname");
 		String mediaItemsDB = config.getString("mongodb.mediaItemsDB");
-		String mediaItemsCollection = config.getString("mongodb.mediaItemsCollection");
 		String streamUsersDB = config.getString("mongodb.streamUsersDB");
-		String streamUsersCollection = config.getString("mongodb.streamUsersCollection");
 		
 		// Visual Index
 		String visualIndexHostname = config.getString("visualindex.hostname");

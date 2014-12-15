@@ -2,7 +2,6 @@ package gr.iti.mklab.focused.crawler.bolts.items;
 
 import static backtype.storm.utils.Utils.tuple;
 import gr.iti.mklab.framework.common.domain.Item;
-import gr.iti.mklab.framework.common.factories.ObjectFactory;
 
 import java.util.Map;
 
@@ -42,7 +41,7 @@ public class ItemDeserializationBolt extends BaseRichBolt {
 		try {
 			String json = input.getStringByField(inputField);
 			if(json != null) {
-				Item item = ObjectFactory.toObject(json, Item.class);
+				Item item = Item.toObject(json, Item.class);
 				_collector.emit(tuple(item));
 			}
 		} catch(Exception e) {

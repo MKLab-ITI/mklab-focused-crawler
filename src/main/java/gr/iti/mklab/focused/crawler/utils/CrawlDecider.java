@@ -11,10 +11,6 @@ public class CrawlDecider {
 	private JedisPool pool;
 	private Jedis jedis;
 	
-	private static enum Status {
-		NEW, INJECTED, FAILED, SUCCESSFULL
-	}
-	
 	private static Integer expirationTime = 24 * 3600;
 	
 	public CrawlDecider(String redisHost) {
@@ -24,7 +20,7 @@ public class CrawlDecider {
 
 	}
 
-	private void setStatus(String id, String status) {
+	public void setStatus(String id, String status) {
 		jedis.hset(id, "status", status);
 		jedis.expire(id, expirationTime);
 		

@@ -108,7 +108,6 @@ public class VisualIndexer {
 		String mediaItemsDB = config.getString("mongodb.mediaItemsDB", "Prototype");
 		String mediaItemsCollection = config.getString("mongodb.mediaItemsCollection", "MediaItems");
 		String streamUsersDB = config.getString("mongodb.streamUsersDB", "Prototype");
-		String streamUsersCollection = config.getString("mongodb.streamUsersCollection", "StreamUsers");
 		String clustersDB = config.getString("mongodb.clustersDB", "Prototype");
 		String clustersCollection = config.getString("mongodb.clustersCollection", "MediaClusters");
 		

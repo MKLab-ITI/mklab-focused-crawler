@@ -10,7 +10,6 @@ import org.apache.log4j.Logger;
 
 import gr.iti.mklab.focused.crawler.models.RankedWebPage;
 import gr.iti.mklab.framework.common.domain.WebPage;
-import gr.iti.mklab.framework.common.factories.ObjectFactory;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
@@ -57,7 +56,7 @@ public class RankerBolt extends BaseRichBolt {
 		try {
 			String json = input.getStringByField(inputField);
 			
-			WebPage webPage = ObjectFactory.toObject(json, WebPage.class);
+			WebPage webPage = WebPage.toObject(json, WebPage.class);
 			
 			if(webPage != null) {
 				double score = getScore(webPage);
