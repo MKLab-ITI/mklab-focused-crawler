@@ -1,10 +1,6 @@
 package gr.iti.mklab.focused.crawler.bolts.media;
 
-import gr.iti.mklab.framework.client.dao.MediaItemDAO;
-import gr.iti.mklab.framework.client.dao.StreamUserDAO;
-import gr.iti.mklab.framework.client.dao.impl.MediaItemDAOImpl;
-import gr.iti.mklab.framework.client.dao.impl.StreamUserDAOImpl;
-import gr.iti.mklab.framework.client.mongo.UpdateItem;
+import gr.iti.mklab.framework.client.mongo.DAOFactory;
 import gr.iti.mklab.framework.common.domain.Concept;
 import gr.iti.mklab.framework.common.domain.MediaItem;
 import gr.iti.mklab.framework.common.domain.StreamUser;
@@ -13,6 +9,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.mongodb.morphia.dao.BasicDAO;
+import org.mongodb.morphia.query.Query;
+import org.mongodb.morphia.query.UpdateOperations;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -32,26 +31,20 @@ public class MediaUpdaterBolt extends BaseRichBolt {
 	
 	private String _mongodbHostname;
 	private String _mediaItemsDB;
-	private String _mediaItemsCollection;
 	private String _streamUsersDB;
-	private String _streamUsersCollection;
 	
-	private MediaItemDAO _mediaItemDAO;
-	private StreamUserDAO _streamUsersDAO;
+	private BasicDAO<MediaItem, String> _mediaItemDAO;
+	private BasicDAO<StreamUser, String> _streamUsersDAO;
 	//private OutputCollector _collector;
 
 	private long received = 0;
 	private long newMedia=0, existedMedia = 0;
 	
-	public MediaUpdaterBolt(String mongodbHostname, String mediaItemsDB, String mediaItemsCollection, 
-			String streamUsersDB, String streamUsersCollection) {
+	public MediaUpdaterBolt(String mongodbHostname, String mediaItemsDB, String streamUsersDB) {
 		
 		_mongodbHostname = mongodbHostname;
 		_mediaItemsDB = mediaItemsDB;
-		_mediaItemsCollection = mediaItemsCollection;
-		
 		_streamUsersDB = streamUsersDB;
-		_streamUsersCollection = streamUsersCollection;
 	}
 	
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
@@ -63,8 +56,11 @@ public class MediaUpdaterBolt extends BaseRichBolt {
 		
 		_logger = Logger.getLogger(MediaUpdaterBolt.class);
 		try {
-			_mediaItemDAO = new MediaItemDAOImpl(_mongodbHostname, _mediaItemsDB, _mediaItemsCollection);
-			_streamUsersDAO = new StreamUserDAOImpl(_mongodbHostname, _streamUsersDB, _streamUsersCollection);
+			DAOFactory daoFactory = new DAOFactory();
+			
+			_mediaItemDAO = daoFactory.getDAO(_mongodbHostname, _mediaItemsDB, MediaItem.class);
+			_streamUsersDAO = daoFactory.getDAO(_mongodbHostname, _streamUsersDB, StreamUser.class);
+			
 			//_collector = collector;
 		} catch (Exception e) {
 			_logger.error(e);
@@ -86,42 +82,45 @@ public class MediaUpdaterBolt extends BaseRichBolt {
 			
 				String mId = mediaItem.getId();
 				
-				if(_mediaItemDAO.exists(mId)) {
+				Query<MediaItem> query = _mediaItemDAO.createQuery();
+				query.filter("id", mId);
+				
+				if(_mediaItemDAO.exists(query)) {
 				
 					existedMedia++;
 					
-					UpdateItem update = new UpdateItem();
+					UpdateOperations<MediaItem> ops = _mediaItemDAO.createUpdateOperations();
 				
 					Integer width = mediaItem.getWidth();
 					Integer height = mediaItem.getHeight();
 					if(width != null && height != null && width != -1 && height != -1) {
-						update.setField("height", height);
-						update.setField("width", width);
+						ops.set("height", height);
+						ops.set("width", width);
 					}
 				
 					List<Concept> concepts = mediaItem.getConcepts();
 					if(concepts != null) {
-						update.setField("concepts", concepts);
+						ops.set("concepts", concepts);
 					}
 					
 					String clusterId = mediaItem.getClusterId();
 					if(clusterId != null) {
-						update.setField("clusterId", clusterId);
+						ops.set("clusterId", clusterId);
 					}
 					
-					_mediaItemDAO.updateMediaItem(mediaItem.getId(), update);
+					_mediaItemDAO.update(query, ops);
 				}
 				else {
 					newMedia++;
-					_mediaItemDAO.addMediaItem(mediaItem);
+					_mediaItemDAO.save(mediaItem);
 					
 					StreamUser user = mediaItem.getUser();
-					
 					if(user != null && _streamUsersDAO != null) {
 						user.setLastUpdated(System.currentTimeMillis());
 						
-						if(!_streamUsersDAO.exists(user.getId())) {
-							_streamUsersDAO.insertStreamUser(user);
+						Query<StreamUser> q = _streamUsersDAO.createQuery().filter("id", user.getId());
+						if(!_streamUsersDAO.exists(q)) {
+							_streamUsersDAO.save(user);
 						}
 					}
 				}

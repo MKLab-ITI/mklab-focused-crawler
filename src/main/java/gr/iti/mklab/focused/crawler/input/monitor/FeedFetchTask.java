@@ -19,22 +19,15 @@ public class FeedFetchTask implements Runnable {
 	private Retriever retriever;
 	
 	public TimeUnit timeUnit = MILLISECONDS;
+	
 	private long rate = 30 * 60 * 1000; 			// Request rate: 30 minutes by default  
-//	private long updatesRate = 60 * 60 * 1000;		// Updates rate: 1 hour by default  
-	
-//	private Date requestSince = new Date();			// Current date by default
-//	private Date updateSince = new Date();			// Current date by default
-	
-//	private long lastUpdateTime = 0;
-//	private long lastRequestTime = 0;
+
 	private Feed feed;
 	private Integer retrievedItems;
 	
 	private boolean completed = false;
-	private boolean needToPause = false;
 
 	public FeedFetchTask(Feed feed, Retriever retriever) {
-		
 		this.feed = feed;
 		this.retriever = retriever;
 	}
@@ -60,10 +53,6 @@ public class FeedFetchTask implements Runnable {
 		return completed;
 	}
 	
-	public boolean getPaused() {
-		return needToPause;
-	}
-
 	public long getScheduleRate() {
 		return rate;
 	}

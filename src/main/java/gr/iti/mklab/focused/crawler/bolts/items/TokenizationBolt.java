@@ -17,7 +17,7 @@ import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 
 import edu.stanford.nlp.ling.TaggedWord;
-import gr.iti.mklab.framework.common.domain.Entity;
+import gr.iti.mklab.framework.common.domain.NamedEntity;
 import gr.iti.mklab.framework.common.domain.Item;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -87,9 +87,9 @@ public class TokenizationBolt extends BaseRichBolt {
 			}	
 		}
 		else if(_type.equals(TokenType.NE)) {
-			List<Entity> entities = item.getEntities();
+			List<NamedEntity> entities = item.getEntities();
 			if(entities != null) {
-				for(Entity e : entities) {
+				for(NamedEntity e : entities) {
 					tokens.add(e.getName());
 				}
 			}

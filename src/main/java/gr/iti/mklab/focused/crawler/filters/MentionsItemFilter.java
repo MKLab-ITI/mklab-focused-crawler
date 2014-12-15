@@ -5,9 +5,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.mongodb.morphia.dao.BasicDAO;
+import org.mongodb.morphia.query.Query;
 
-import gr.iti.mklab.framework.client.dao.AccountDAO;
-import gr.iti.mklab.framework.client.dao.impl.AccountDAOImpl;
+import gr.iti.mklab.framework.client.mongo.DAOFactory;
 import gr.iti.mklab.framework.common.domain.Account;
 import gr.iti.mklab.framework.common.domain.config.Configuration;
 import gr.iti.mklab.framework.common.domain.Item;
@@ -24,13 +25,16 @@ public class MentionsItemFilter extends ItemFilter {
 		
 		String host =configuration.getParameter("host");
 		String database =configuration.getParameter("database");
-		String collection =configuration.getParameter("collection");
+		
+		BasicDAO<Account, String> dao = new DAOFactory().getDAO(host, database, Account.class);
 			
-		AccountDAO dao = new AccountDAOImpl(host, database, collection);
-		List<Account> sources = dao.findListAccounts(listId);
+		Query<Account> q = dao.getDatastore().createQuery(Account.class);
+		q.filter("listId", listId);
+    	
+		List<Account> accounts = dao.find(q).asList();
 		ids = new ArrayList<String>();
-		for(Account source : sources) {
-			ids.add(source.getNetwork() + "#" + source.getId());
+		for(Account account : accounts) {
+			ids.add(account.getSource() + "#" + account.getId());
 		}
 		
 		Logger.getLogger(MentionsItemFilter.class).info("Initialized. " + 

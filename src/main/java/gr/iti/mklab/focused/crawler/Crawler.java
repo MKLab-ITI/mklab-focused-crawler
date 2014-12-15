@@ -167,7 +167,7 @@ public class Crawler {
 		// Media Items Bolts
 		miStatusChecker = new StatusCheckBolt(redisHost);
 		visualIndexer = new VisualIndexerBolt(visualIndexHostname, visualIndexCollection, codebookFiles, pcaFile);
-		mediaUpdater = new MediaUpdaterBolt(mongodbHostname, mediaItemsDB, mediaItemsCollection, streamUsersDB, streamUsersCollection);
+		mediaUpdater = new MediaUpdaterBolt(mongodbHostname, mediaItemsDB, streamUsersDB);
 		mediaTextIndexer = new MediaTextIndexerBolt(mediaTextIndexService);	
 		clusterer = new VisualClustererBolt(redisHost, mediaTextIndexService);
 		redisBolt = new RedisBolt(redisHost, "mediaIds");

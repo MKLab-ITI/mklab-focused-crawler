@@ -3,7 +3,6 @@ package gr.iti.mklab.focused.crawler.bolts.streams;
 import gr.iti.mklab.framework.abstractions.socialmedia.items.TwitterItem;
 import gr.iti.mklab.framework.common.domain.Account;
 import gr.iti.mklab.framework.common.domain.Item;
-import gr.iti.mklab.framework.common.domain.Keyword;
 import gr.iti.mklab.framework.common.domain.feeds.AccountFeed;
 import gr.iti.mklab.framework.common.domain.feeds.Feed;
 import gr.iti.mklab.framework.common.domain.feeds.LocationFeed;
@@ -125,13 +124,10 @@ public class TwitterStreamBolt extends BaseRichBolt {
 			
 		for(Feed feed : feeds) {
 			if(feed.getFeedtype().equals(FeedType.KEYWORDS)) {
-				if(((KeywordsFeed) feed).getKeyword() != null) {
-					keys.add(((KeywordsFeed) feed).getKeyword().getName());
-				}
-				else {
-					for(Keyword keyword : ((KeywordsFeed) feed).getKeywords())
-					keys.add(keyword.getName());
-				}
+		
+				KeywordsFeed keywordFeed = (KeywordsFeed) feed;
+				List<String> keywords = keywordFeed.getKeywords();
+				keys.addAll(keywords);
 			}
 			else if(feed.getFeedtype().equals(FeedType.ACCOUNT)) {
 				Account source = ((AccountFeed) feed).getAccount();		

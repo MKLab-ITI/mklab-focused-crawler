@@ -38,7 +38,7 @@ public class MediaRankerBolt extends BaseRichBolt {
 
 	public void execute(Tuple tuple) {
 		String json = tuple.getStringByField(inputField);
-		MediaItem mediaItem = ObjectFactory.createMediaItem(json);
+		MediaItem mediaItem = ObjectFactory.toObject(json, MediaItem.class);
 
 		Long shares = mediaItem.getShares();
 		

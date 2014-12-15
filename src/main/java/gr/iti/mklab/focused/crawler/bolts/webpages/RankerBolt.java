@@ -56,7 +56,9 @@ public class RankerBolt extends BaseRichBolt {
 	public void execute(Tuple input) {
 		try {
 			String json = input.getStringByField(inputField);
-			WebPage webPage = ObjectFactory.createWebPage(json);
+			
+			WebPage webPage = ObjectFactory.toObject(json, WebPage.class);
+			
 			if(webPage != null) {
 				double score = getScore(webPage);
 				RankedWebPage rankedWebPage = new RankedWebPage(webPage, score);

@@ -39,7 +39,7 @@ public class ItemsRankerBolt extends BaseRichBolt {
 
 	public void execute(Tuple tuple) {
 		String json = tuple.getStringByField(inputField);
-		Item item = ObjectFactory.create(json);
+		Item item = ObjectFactory.toObject(json, Item.class);
 
 		Long shares = item.getShares();
 		

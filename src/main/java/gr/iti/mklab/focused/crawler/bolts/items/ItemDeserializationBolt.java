@@ -42,7 +42,7 @@ public class ItemDeserializationBolt extends BaseRichBolt {
 		try {
 			String json = input.getStringByField(inputField);
 			if(json != null) {
-				Item item = ObjectFactory.create(json);
+				Item item = ObjectFactory.toObject(json, Item.class);
 				_collector.emit(tuple(item));
 			}
 		} catch(Exception e) {

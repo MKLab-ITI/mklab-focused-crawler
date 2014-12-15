@@ -13,11 +13,13 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 import org.apache.solr.client.solrj.impl.HttpSolrServer;
 import org.apache.solr.common.SolrInputDocument;
+import org.mongodb.morphia.dao.BasicDAO;
+import org.mongodb.morphia.query.Query;
+import org.mongodb.morphia.query.UpdateOperations;
 
 import gr.iti.mklab.framework.client.dao.ClusterDAO;
 import gr.iti.mklab.framework.client.dao.MediaItemDAO;
-import gr.iti.mklab.framework.client.dao.impl.ClusterDAOImpl;
-import gr.iti.mklab.framework.client.dao.impl.MediaItemDAOImpl;
+import gr.iti.mklab.framework.client.mongo.DAOFactory;
 import gr.iti.mklab.framework.client.search.visual.JsonResultSet;
 import gr.iti.mklab.framework.client.search.visual.JsonResultSet.JsonResult;
 import gr.iti.mklab.framework.client.search.visual.VisualIndexHandler;
@@ -42,13 +44,12 @@ public class ClustererBolt extends BaseRichBolt {
 	private String mongoHost;
 	
 	private String mediaItemsDbName;
-	private String mediaItemsCollectionName;
 	
 	private String clustersDbName;
 	private String clustersCollectionName;
 	
-	private MediaItemDAO _mediaItemDAO = null;
-	private ClusterDAO _mediaClusterDAO = null;
+	private BasicDAO<MediaItem, String> _mediaItemDAO = null;
+	private BasicDAO<Cluster, String> _mediaClusterDAO = null;
 
 	private Queue<Pair<?, ?>> _mQ = new LinkedBlockingQueue<Pair<?, ?>>();
 
@@ -71,7 +72,7 @@ public class ClustererBolt extends BaseRichBolt {
 		
 		this.mongoHost = mongoHost;
 		this.mediaItemsDbName = mediaItemsDbName;
-		this.mediaItemsCollectionName = mediaItemsCollectionName;
+
 		this.clustersDbName = clustersDbName;
 		this.clustersCollectionName = clustersCollectionName;
 		
@@ -101,10 +102,12 @@ public class ClustererBolt extends BaseRichBolt {
 		logger = Logger.getLogger(ClustererBolt.class);
 		
 		try {
-			_mediaItemDAO = new MediaItemDAOImpl(mongoHost, mediaItemsDbName, mediaItemsCollectionName);
+			DAOFactory daoFactory = new DAOFactory();
+			
+			_mediaItemDAO = daoFactory.getDAO(mongoHost, mediaItemsDbName, MediaItem.class);
 			
 			if(clustersDbName != null && clustersCollectionName != null) {
-				_mediaClusterDAO = new ClusterDAOImpl(mongoHost, clustersDbName, clustersCollectionName);
+				_mediaClusterDAO = daoFactory.getDAO(mongoHost, clustersDbName, Cluster.class);
 			}
 			
 			_visualIndex = new VisualIndexHandler(vIndexHostname, vIndexCollection);
@@ -220,7 +223,11 @@ public class ClustererBolt extends BaseRichBolt {
 				// Store new clusters
 				for(String mId : clustersToAdd.keySet()) {
 					String clusterId = clustersToAdd.get(mId);
-					_mediaItemDAO.updateMediaItem(mId, "clusterId", clusterId);
+					
+					Query<MediaItem> q = _mediaItemDAO.createQuery().filter("id", mId);
+					UpdateOperations<MediaItem> ops = _mediaItemDAO.createUpdateOperations().set("clusterId", clusterId);
+					
+					_mediaItemDAO.update(q, ops);
 					
 					SolrInputDocument doc = new SolrInputDocument();
 					doc.addField("id", mId);
@@ -231,7 +238,7 @@ public class ClustererBolt extends BaseRichBolt {
 					if(_mediaClusterDAO != null) {
 						Cluster cluster = new Cluster(clusterId.toString());
 						cluster.addMember(mId);
-						_mediaClusterDAO.addCluster(cluster);
+						_mediaClusterDAO.save(cluster);
 					}
 				}
 				
@@ -246,7 +253,7 @@ public class ClustererBolt extends BaseRichBolt {
 						clusterId = clustersToAdd.get(mId);
 					}
 					else {
-						MediaItem nearestMediaItem = _mediaItemDAO.getMediaItem(nearestMediaId);
+						MediaItem nearestMediaItem = _mediaItemDAO.findOne("id", nearestMediaId);
 						if(nearestMediaItem != null) {
 							clusterId = nearestMediaItem.getClusterId();
 						}
@@ -260,7 +267,10 @@ public class ClustererBolt extends BaseRichBolt {
 						
 						logger.info(mId + " -> Cluster: " + clusterId + " ( nearest: " + nearestMediaId + " )");
 						
-						_mediaItemDAO.updateMediaItem(mId, "clusterId", clusterId);
+						Query<MediaItem> q = _mediaItemDAO.createQuery().filter("id", mId);
+						UpdateOperations<MediaItem> ops = _mediaItemDAO.createUpdateOperations().set("clusterId", clusterId);
+						
+						_mediaItemDAO.update(q, ops);
 						
 						SolrInputDocument doc = new SolrInputDocument();
 						doc.addField("id", mId);
@@ -269,7 +279,11 @@ public class ClustererBolt extends BaseRichBolt {
 						docs.add(doc);
 						
 						if(_mediaClusterDAO != null) {
-							_mediaClusterDAO.addItemInCluster(clusterId, mId);
+							
+							Query<Cluster> query = _mediaClusterDAO.createQuery().filter("id", clusterId);
+							UpdateOperations<Cluster> clusterOps = _mediaClusterDAO.createUpdateOperations().add("members", mId);
+							
+							_mediaClusterDAO.update(query, clusterOps);
 						}
 						
 					}

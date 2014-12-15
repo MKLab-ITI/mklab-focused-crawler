@@ -43,7 +43,7 @@ public class MediaItemDeserializationBolt extends BaseRichBolt {
 	public void execute(Tuple input) {
 		try {
 			String json = input.getStringByField(inputField);
-			MediaItem mediaItem = ObjectFactory.createMediaItem(json);
+			MediaItem mediaItem = ObjectFactory.toObject(json, MediaItem.class);
 			if(mediaItem != null) {
 				_collector.emit(tuple(mediaItem));
 			}

@@ -42,7 +42,7 @@ public class WebPageDeserializationBolt extends BaseRichBolt {
 	public void execute(Tuple input) {
 		try {
 			String json = input.getStringByField(inputField);
-			WebPage webPage = ObjectFactory.createWebPage(json);
+			WebPage webPage = ObjectFactory.toObject(json, WebPage.class);
 			if(webPage != null) {
 				_collector.emit(tuple(webPage));
 			}

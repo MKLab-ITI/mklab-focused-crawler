@@ -158,13 +158,13 @@ public class SocialsensorCrawler {
 		urlExpander = new URLExpansionBolt("webpages");
 		articleExtraction = new ArticleExtractionBolt(24);
 		mediaExtraction = new MediaExtractionBolt();
-		webPageUpdater = new WebPagesUpdaterBolt(mongodbHostname, webPagesDB, webPagesCollection);
+		webPageUpdater = new WebPagesUpdaterBolt(mongodbHostname, webPagesDB);
 		textIndexer = new TextIndexerBolt(textIndexService);
 			
 		// Media Items Bolts
 		visualIndexer = new VisualIndexerBolt(visualIndexHostname, visualIndexCollection, codebookFiles, pcaFile);
 		//clusterer = new ClustererBolt(mongodbHostname, mediaItemsDB, mediaItemsCollection, visualIndexHostname, visualIndexCollection, mediaTextIndexService);
-		mediaUpdater = new MediaUpdaterBolt(mongodbHostname, mediaItemsDB, mediaItemsCollection, streamUsersDB, streamUsersCollection);
+		mediaUpdater = new MediaUpdaterBolt(mongodbHostname, mediaItemsDB, streamUsersDB);
 		mediaTextIndexer = new MediaTextIndexerBolt(mediaTextIndexService);
 		
 		// Create topology 

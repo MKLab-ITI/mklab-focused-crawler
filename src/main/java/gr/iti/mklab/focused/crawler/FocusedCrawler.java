@@ -124,10 +124,10 @@ public class FocusedCrawler {
 			
 			articleExtraction = new ArticleExtractionBolt(24);
 			mediaExtraction = new MediaExtractionBolt();
-			webPageUpdater = new WebPagesUpdaterBolt(mongodbHostname, webPagesDB, webPagesCollection);
+			webPageUpdater = new WebPagesUpdaterBolt(mongodbHostname, webPagesDB);
 			textIndexer = new TextIndexerBolt(textIndexService);
 
-			mediaUpdater = new MediaUpdaterBolt(mongodbHostname, mediaItemsDB, mediaItemsCollection, streamUsersDB, streamUsersCollection);
+			mediaUpdater = new MediaUpdaterBolt(mongodbHostname, mediaItemsDB, streamUsersDB);
 			mediaTextIndexer = new MediaTextIndexerBolt(mediaTextIndexService);
 		} catch (Exception e) {
 			logger.error(e);

@@ -1,6 +1,5 @@
 package gr.iti.mklab.focused.crawler.input.monitor;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,12 +46,13 @@ public class FeedsMonitor {
 			addFeed(feed);
 		}
 	}
+	
 	public void addFeeds(List<Feed> feeds) {
 		for(Feed feed : feeds) {
 			addFeed(feed);
 		}
-		//_logger.info(feeds.size()+" added to monitor");
 	}
+	
 	public void removeFeed(Feed feed) {
 		String feedId = feed.getId();
 		FeedFetchTask feedFetcher = feedFetchTasks.get(feedId);
@@ -88,25 +88,9 @@ public class FeedsMonitor {
 		}
 	}
 	
-	public void setSizeOfThreads(int size){
+	public void setSizeOfThreads(int size) {
 		scheduler = Executors.newScheduledThreadPool(size);
 	}
-	
-	public boolean isMonitorFinished() {
-		int allComplete = 0;
-		List<FeedFetchTask> finishedTasks = new ArrayList<FeedFetchTask>();
-		while(allComplete < feedFetchTasks.size()){
-			for(FeedFetchTask  feedFetcherTask : feedFetchTasks.values()) {
-				if(feedFetcherTask.isCompleted() && !finishedTasks.contains(feedFetcherTask)){
-					finishedTasks.add(feedFetcherTask);
-					
-					allComplete++;
-				}
-			}
-		}
-		return true;
-	}
-	
 	
 	public void startMonitor(Feed feed) {
 		String feedId = feed.getId();
