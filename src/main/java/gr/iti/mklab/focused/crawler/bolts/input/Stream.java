@@ -2,10 +2,17 @@ package gr.iti.mklab.focused.crawler.bolts.input;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
 import org.apache.log4j.Logger;
 
+import backtype.storm.task.OutputCollector;
+import backtype.storm.task.TopologyContext;
+import backtype.storm.topology.OutputFieldsDeclarer;
+import backtype.storm.topology.base.BaseRichBolt;
+import backtype.storm.tuple.Fields;
+import backtype.storm.tuple.Tuple;
 import gr.iti.mklab.focused.crawler.input.monitor.FeedsMonitor;
 import gr.iti.mklab.framework.common.domain.Item;
 import gr.iti.mklab.framework.common.domain.config.Configuration;
@@ -15,15 +22,18 @@ import gr.iti.mklab.framework.retrievers.Retriever;
 /**
  * Class responsible for handling the stream of information regarding 
  * a social network or a news feed source.
- * It is responsible for the configuration of the connection to the selected API
- * and the retrieval/storing of relevant content.
  * 
  * @author Manos Schinas
  * @email  manosetro@iti.gr
  *
  */
-public abstract class Stream {
+public abstract class Stream extends BaseRichBolt {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8693955172888144742L;
+	
 	protected static final String KEY = "Key";
 	protected static final String SECRET = "Secret";
 	protected static final String ACCESS_TOKEN = "AccessToken";
@@ -32,23 +42,28 @@ public abstract class Stream {
 	protected static final String APP_ID = "AppId";
 	protected static final String APP_SECRET = "AppSecret";
 	
-	protected static final String MAX_RESULTS = "maxResults";
-	protected static final String MAX_REQUESTS = "maxRequests";
-	protected static final String MAX_RUNNING_TIME = "maxRunningTime";
+	protected static final String MAX_REQUESTS = "maxRequest";
+	protected static final String WINDOW_LENGTH = "windowLength";
+	
+	private Logger  logger = Logger.getLogger(Stream.class);
 	
 	protected FeedsMonitor monitor;
 	
 	protected BlockingQueue<Feed> feedsQueue;
 	protected Retriever retriever = null;
+
+	protected Configuration config;
+	protected OutputCollector outputCollector;
 	
-	private Logger  logger = Logger.getLogger(Stream.class);
+	
+	public Stream(Configuration config) {
+		this.config = config;
+	}
 	
 	/**
 	 * Opens a stream for updates delivery
-	 * @param config
-	 *      Stream configuration parameters
-	 * @throws StreamException
-	 *      In any case of error during stream open
+	 * @param config   Stream configuration parameters
+	 * @throws StreamException  In any case of error during stream open
 	 */
 	public abstract void open(Configuration config);
 	
@@ -73,36 +88,6 @@ public abstract class Stream {
 	}
 	
 	/**
-	 * Sets the feeds monitor for the stream
-	 * @return
-	 */
-	public boolean setMonitor() {
-		if(retriever == null)
-			return false;
-		
-		monitor = new FeedsMonitor(retriever);
-		return true;
-	}
-	
-	/**
-	 * Sets the users list that will be used to retrieve from the stream (utilized for Twitter Stream)
-	 * @param usersToLists
-	 
-	public void setUserLists(Map<String, Set<String>> usersToLists) {
-		this.usersToLists = usersToLists;
-		
-		if(usersToLists != null) {
-			Set<String> allLists = new HashSet<String>();
-			for(Set<String> lists : usersToLists.values()) {
-				allLists.addAll(lists);
-			}
-			logger.info("=============================================");
-			logger.info(usersToLists.size() + " user in " + allLists.size() + " Lists!!!");
-		}
-	}
-	*/
-	
-	/**
 	 * Searches with the wrapper of the stream for a particular
 	 * set of feeds (feeds can be keywordsFeeds, userFeeds, locationFeeds, listFeeds or URLFeeds)
 	 * @param feeds
@@ -117,7 +102,6 @@ public abstract class Stream {
 				return retrievedItems;
 			}
 			
-			//logger.info(getName() + ": poll for " + feeds.size() + " feeds");
 			for(Feed feed : feeds) {
 				try {
 					List<Item> items = retriever.retrieve(feed);
@@ -125,10 +109,8 @@ public abstract class Stream {
 					retrievedItems.addAll(items);
 				}
 				catch(Exception e) {
-					logger.error("Exception for feed " + feed.getId() + " of type " + feed.getFeedtype() + " from "
-							+ getName());
-					logger.error("Feed: " + feed);
-					logger.error(e.getMessage());
+					logger.error("Exception for feed " + feed.toString());
+					logger.error("Exception: " + e.getMessage());
 				}
 			}
 		}
@@ -145,7 +127,6 @@ public abstract class Stream {
 	public synchronized List<Item> poll(Feed feed) {
 		List<Item> retrievedItems = new ArrayList<Item>();
 		if(retriever != null) {
-		
 			if(feed == null) {
 				logger.error("Feeds is null in poll method.");
 				return retrievedItems;
@@ -193,4 +174,22 @@ public abstract class Stream {
 	
 	public abstract String getName();
 	
+
+	@Override
+	public void prepare(@SuppressWarnings("rawtypes") Map stormConf, TopologyContext context, OutputCollector collector) {
+		this.outputCollector = collector;
+		open(config);
+	}
+
+	@Override
+	public void execute(Tuple input) {
+		Feed feed = (Feed) input.getValueByField("feed");
+		logger.info(feed.toString());
+	}
+
+	@Override
+	public void declareOutputFields(OutputFieldsDeclarer declarer) {
+		declarer.declare(new Fields("Item"));
+		
+	}
 }

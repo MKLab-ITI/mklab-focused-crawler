@@ -94,13 +94,15 @@ public class DyscoInputSpout extends BaseRichSpout {
         	List<Feed> feeds = createFeeds(dysco);
         	
         	_logger.info(feeds.size() + " feeds created from Dysco: " + dysco.getId());
-        	_collector.emit(tuple(feeds));
+        	for(Feed feed : feeds) {
+        		_collector.emit(tuple(feed));
+        	}
         }
 	}
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("feeds"));		
+		declarer.declare(new Fields("feed"));		
 	}
 
 	class Reader implements Runnable {

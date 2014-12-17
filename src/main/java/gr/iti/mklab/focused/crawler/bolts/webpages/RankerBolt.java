@@ -8,7 +8,7 @@ import java.util.PriorityQueue;
 
 import org.apache.log4j.Logger;
 
-import gr.iti.mklab.focused.crawler.models.RankedWebPage;
+import gr.iti.mklab.framework.common.domain.RankedObject;
 import gr.iti.mklab.framework.common.domain.WebPage;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -30,7 +30,7 @@ public class RankerBolt extends BaseRichBolt {
 	private static long avgTimeDiff = 10 * 60 * 1000; // 10 minutes 
 	
 	private OutputCollector _collector;
-	private PriorityQueue<RankedWebPage> _queue;
+	private PriorityQueue<RankedObject<WebPage>> _queue;
 
 	private String inputField;
 
@@ -41,7 +41,7 @@ public class RankerBolt extends BaseRichBolt {
 	public void prepare(@SuppressWarnings("rawtypes") Map stormConf, TopologyContext context,
 			OutputCollector collector) {
 		this._collector = collector;
-		this._queue = new PriorityQueue<RankedWebPage>();
+		this._queue = new PriorityQueue<RankedObject<WebPage>>();
 		
 		logger = Logger.getLogger(RankerBolt.class);
 		
@@ -60,7 +60,7 @@ public class RankerBolt extends BaseRichBolt {
 			
 			if(webPage != null) {
 				double score = getScore(webPage);
-				RankedWebPage rankedWebPage = new RankedWebPage(webPage, score);
+				RankedObject<WebPage> rankedWebPage = new RankedObject<WebPage>(webPage, score);
 			
 				synchronized(_queue) {
 					_queue.offer(rankedWebPage);
@@ -93,16 +93,16 @@ public class RankerBolt extends BaseRichBolt {
 	
 	class RankerThread extends Thread {
 
-		PriorityQueue<RankedWebPage> queue;
+		PriorityQueue<RankedObject<WebPage>> queue;
 		
-		public RankerThread(PriorityQueue<RankedWebPage> queue) {	
+		public RankerThread(PriorityQueue<RankedObject<WebPage>> queue) {	
 			this.queue = queue;
 		}
 
 		public void run() {
 			while(true) {
 				try {
-					RankedWebPage rankedWebPage = null;
+					RankedObject<WebPage> rankedWebPage = null;
 					synchronized(_queue) {
 						rankedWebPage = queue.poll();
 					}
@@ -112,7 +112,7 @@ public class RankerBolt extends BaseRichBolt {
 					}
 					else {
 
-						WebPage webPage = rankedWebPage.getWebPage();
+						WebPage webPage = rankedWebPage.object;
 						synchronized(_collector) {
 							_collector.emit(tuple(webPage));
 						}

@@ -2,8 +2,10 @@ package gr.iti.mklab.focused.crawler.bolts.input;
 
 import org.apache.log4j.Logger;
 
+import gr.iti.mklab.framework.Credentials;
 import gr.iti.mklab.framework.common.domain.Source;
 import gr.iti.mklab.framework.common.domain.config.Configuration;
+import gr.iti.mklab.framework.retrievers.RateLimitsMonitor;
 import gr.iti.mklab.framework.retrievers.impl.InstagramRetriever;
 
 /**
@@ -15,11 +17,18 @@ import gr.iti.mklab.framework.retrievers.impl.InstagramRetriever;
 
 public class InstagramStream extends Stream {
 	
-	private Logger logger = Logger.getLogger(InstagramStream.class);
-	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -4162846494100416523L;
 	public static final Source SOURCE = Source.Instagram;
 
-
+	private Logger logger = Logger.getLogger(InstagramStream.class);
+	
+	public InstagramStream(Configuration config) {
+		super(config);
+	}
+	
 	@Override
 	public void open(Configuration config) {
 		logger.info("#Instagram : Open stream");
@@ -33,15 +42,20 @@ public class InstagramStream extends Stream {
 		String secret = config.getParameter(SECRET);
 		String token = config.getParameter(ACCESS_TOKEN);
 		
-		String maxResults = config.getParameter(MAX_RESULTS);
-		String maxRequests = config.getParameter(MAX_REQUESTS);
-		String maxRunningTime = config.getParameter(MAX_RUNNING_TIME);
+		int maxRequests = Integer.parseInt(config.getParameter(MAX_REQUESTS));
+		long windowLength = Long.parseLong(config.getParameter(WINDOW_LENGTH));
 		
 		if (key == null || secret == null || token == null) {
 			logger.error("#Instagram : Stream requires authentication.");
 		}
 		
-		retriever = new InstagramRetriever(key, secret, token);
+		Credentials credentials = new Credentials();
+		credentials.setKey(key);
+		credentials.setSecret(secret);
+		credentials.setAccessToken(token);
+		
+		RateLimitsMonitor rateLimitsMonitor = new RateLimitsMonitor(maxRequests, windowLength);
+		retriever = new InstagramRetriever(credentials, rateLimitsMonitor);
 	
 	}
 

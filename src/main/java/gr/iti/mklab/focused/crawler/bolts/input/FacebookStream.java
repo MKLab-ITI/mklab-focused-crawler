@@ -5,6 +5,7 @@ import org.apache.log4j.Logger;
 import gr.iti.mklab.framework.Credentials;
 import gr.iti.mklab.framework.common.domain.Source;
 import gr.iti.mklab.framework.common.domain.config.Configuration;
+import gr.iti.mklab.framework.retrievers.RateLimitsMonitor;
 import gr.iti.mklab.framework.retrievers.impl.FacebookRetriever;
 
 /**
@@ -15,12 +16,18 @@ import gr.iti.mklab.framework.retrievers.impl.FacebookRetriever;
  */
 public class FacebookStream extends Stream {
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 203079382776859219L;
+
 	public static Source SOURCE = Source.Facebook;
 	
-	public int maxFBRequests = 600;
-	public long minInterval = 600000;
-	
 	private Logger  logger = Logger.getLogger(FacebookStream.class);	
+	
+	public FacebookStream(Configuration config) {
+		super(config);
+	}
 	
 	@Override
 	public synchronized void open(Configuration config) {
@@ -37,9 +44,7 @@ public class FacebookStream extends Stream {
 		String app_secret = config.getParameter(APP_SECRET);
 		
 		int maxRequests = Integer.parseInt(config.getParameter(MAX_REQUESTS));
-		
-		if(maxRequests > maxFBRequests)
-			maxRequests = maxFBRequests;   
+		long windowLength = Long.parseLong(config.getParameter(WINDOW_LENGTH));
 		
 		if (accessToken == null && app_id == null && app_secret == null) {
 			logger.error("#Facebook : Stream requires authentication.");
@@ -52,7 +57,8 @@ public class FacebookStream extends Stream {
 		Credentials credentials = new Credentials();
 		credentials.setAccessToken(accessToken);
 		
-		retriever = new FacebookRetriever(credentials, maxRequests, minInterval);	
+		RateLimitsMonitor rateLimitsMonitor = new RateLimitsMonitor(maxRequests, windowLength);
+		retriever = new FacebookRetriever(credentials, rateLimitsMonitor);	
 
 	}
 

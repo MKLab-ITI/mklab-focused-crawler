@@ -8,17 +8,18 @@ import gr.iti.mklab.framework.common.domain.MediaItem;
 
 public class Article implements Serializable {
 
-	
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -1660393388232225430L;
+	
 	private String title = null;
 	private String text = null;
 	private String[] tags = null;
+	
 	private boolean isLowQuality = true;
 	
-	List<MediaItem> mediaItems = new ArrayList<MediaItem>();
+	private List<MediaItem> mediaItems = new ArrayList<MediaItem>();
 	
 	public Article(String title, String text) {
 		this.title = title;
@@ -60,4 +61,5 @@ public class Article implements Serializable {
 	public String toString() {
 		return title;
 	}
+	
 }

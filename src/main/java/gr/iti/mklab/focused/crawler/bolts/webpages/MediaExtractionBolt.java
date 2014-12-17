@@ -1,18 +1,10 @@
 package gr.iti.mklab.focused.crawler.bolts.webpages;
 
 import static backtype.storm.utils.Utils.tuple;
-import gr.iti.mklab.framework.Credentials;
 import gr.iti.mklab.framework.common.domain.MediaItem;
 import gr.iti.mklab.framework.common.domain.StreamUser;
 import gr.iti.mklab.framework.common.domain.WebPage;
 import gr.iti.mklab.framework.retrievers.SocialMediaRetriever;
-import gr.iti.mklab.framework.retrievers.impl.DailyMotionRetriever;
-import gr.iti.mklab.framework.retrievers.impl.FacebookRetriever;
-import gr.iti.mklab.framework.retrievers.impl.FlickrRetriever;
-import gr.iti.mklab.framework.retrievers.impl.InstagramRetriever;
-import gr.iti.mklab.framework.retrievers.impl.TwitpicRetriever;
-import gr.iti.mklab.framework.retrievers.impl.VimeoRetriever;
-import gr.iti.mklab.framework.retrievers.impl.YoutubeRetriever;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -45,18 +37,6 @@ public class MediaExtractionBolt extends BaseRichBolt {
 	
 	private OutputCollector _collector;
 	
-	private static String instagramClientId = "50fca9eded824679934a71cfa8dda880";
-	//private static String instagramToken = "";
-	//private static String instagramSecret = "";
-	
-	private static String flickrKey = "";
-	private static String flickrSecret = "";
-	
-	private static String facebookToken = "260504214011769|jATWKceE7aVH4jxsB4DBuNjKBRc";
-	
-	private static String youtubeClientId = "manosetro";
-	private static String youtubeDevKey = "AI39si6DMfJRhrIFvJRv0qFubHHQypIwjkD-W7tsjLJArVKn9iR-QoT8t-UijtITl4TuyHzK-cxqDDCkCBoJB-seakq1gbt1iQ";
-
 	private static Pattern instagramPattern 	= 	Pattern.compile("https*://instagram.com/p/([\\w\\-]+)/");
 	private static Pattern youtubePattern 		= 	Pattern.compile("https*://www.youtube.com/watch?.*v=([a-zA-Z0-9_\\-]+)(&.+=.+)*");
 	private static Pattern vimeoPattern 		= 	Pattern.compile("https*://vimeo.com/([0-9]+)/*$");
@@ -77,27 +57,24 @@ public class MediaExtractionBolt extends BaseRichBolt {
 		this._collector = collector;  		
 		logger = Logger.getLogger(MediaExtractionBolt.class);
 		
+		/*
 		retrievers.put("instagram", new InstagramRetriever(instagramClientId));
-		
 		Credentials yrCredentials = new Credentials();
 		yrCredentials.setClientId(youtubeClientId);
 		yrCredentials.setKey(youtubeDevKey);
 		retrievers.put("youtube", new YoutubeRetriever(yrCredentials, 10, 60000L));
-		
 		retrievers.put("vimeo", new VimeoRetriever());
-		
 		retrievers.put("twitpic", new TwitpicRetriever());
-		
 		retrievers.put("dailymotion", new DailyMotionRetriever());
-		
 		Credentials fbCredentials = new Credentials();
 		fbCredentials.setAccessToken(facebookToken);
 		retrievers.put("facebook", new FacebookRetriever(fbCredentials, 100, 600000L));
-		
 		Credentials flickrCredentials = new Credentials();
 		flickrCredentials.setKey(flickrKey);
 		flickrCredentials.setSecret(flickrSecret);
 		retrievers.put("flickr", new FlickrRetriever(flickrCredentials, 100, 600000L));
+		*/
+		
 	}
 
 	public void execute(Tuple tuple) {

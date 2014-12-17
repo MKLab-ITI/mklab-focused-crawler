@@ -5,6 +5,7 @@ import org.apache.log4j.Logger;
 import gr.iti.mklab.framework.Credentials;
 import gr.iti.mklab.framework.common.domain.Source;
 import gr.iti.mklab.framework.common.domain.config.Configuration;
+import gr.iti.mklab.framework.retrievers.RateLimitsMonitor;
 import gr.iti.mklab.framework.retrievers.impl.TwitterRetriever;
 
 /**
@@ -16,15 +17,23 @@ import gr.iti.mklab.framework.retrievers.impl.TwitterRetriever;
  */
 public class TwitterStream extends Stream {
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -6591602532152975582L;
+
 	public static Source SOURCE = Source.Twitter;
 	
 	private Logger  logger = Logger.getLogger(TwitterStream.class);
 
+	public TwitterStream(Configuration config) {
+		super(config);
+	}
+	
 	@Override
 	public synchronized void open(Configuration config) {
 
 		logger.info("#Twitter : Open stream");
-		
 		if (config == null) {
 			logger.error("#Twitter : Config file is null.");
 			return;
@@ -35,8 +44,8 @@ public class TwitterStream extends Stream {
 		String oAuthAccessToken 		= 	config.getParameter(ACCESS_TOKEN);
 		String oAuthAccessTokenSecret 	= 	config.getParameter(ACCESS_TOKEN_SECRET);
 		
-		if (oAuthConsumerKey == null || oAuthConsumerSecret == null ||
-				oAuthAccessToken == null || oAuthAccessTokenSecret == null) {
+		if (oAuthConsumerKey == null || oAuthConsumerSecret == null || oAuthAccessToken == null 
+				|| oAuthAccessTokenSecret == null) {
 			logger.error("#Twitter : Stream requires authentication");
 		}
 		
@@ -48,8 +57,8 @@ public class TwitterStream extends Stream {
 
 		logger.info("Initialize Twitter Retriever for REST api");
 
-		String maxRequests = config.getParameter(MAX_REQUESTS);
-		String maxRunningTime = config.getParameter(MAX_RUNNING_TIME);
+		int maxRequests = Integer.parseInt(config.getParameter(MAX_REQUESTS));
+		long windowLength = Long.parseLong(config.getParameter(WINDOW_LENGTH));
 			
 		Credentials credentials = new Credentials();
 		credentials.setKey(oAuthConsumerKey);
@@ -57,7 +66,8 @@ public class TwitterStream extends Stream {
 		credentials.setAccessToken(oAuthAccessToken);
 		credentials.setAccessTokenSecret(oAuthAccessTokenSecret);
 		
-		retriever = new TwitterRetriever(credentials, Integer.parseInt(maxRequests), Long.parseLong(maxRunningTime));	
+		RateLimitsMonitor rateLimitsMonitor = new RateLimitsMonitor(maxRequests, windowLength);
+		retriever = new TwitterRetriever(credentials, rateLimitsMonitor);	
 	}
 	
 	@Override

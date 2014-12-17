@@ -5,6 +5,7 @@ import org.apache.log4j.Logger;
 import gr.iti.mklab.framework.Credentials;
 import gr.iti.mklab.framework.common.domain.Source;
 import gr.iti.mklab.framework.common.domain.config.Configuration;
+import gr.iti.mklab.framework.retrievers.RateLimitsMonitor;
 import gr.iti.mklab.framework.retrievers.impl.GooglePlusRetriever;
 
 /**
@@ -14,12 +15,19 @@ import gr.iti.mklab.framework.retrievers.impl.GooglePlusRetriever;
  * @email  ailiakop@iti.gr
  */
 public class GooglePlusStream extends Stream {
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8806944911389188798L;
 	public static final Source SOURCE = Source.GooglePlus;
 	
 	private Logger logger = Logger.getLogger(GooglePlusStream.class);
-	
-	private String key;
 
+	public GooglePlusStream(Configuration config) {
+		super(config);
+	}
+	
 	@Override
 	public void open(Configuration config) {
 		logger.info("#GooglePlus : Open stream");
@@ -29,10 +37,10 @@ public class GooglePlusStream extends Stream {
 			return;
 		}
 		
-		key = config.getParameter(KEY);
+		String key = config.getParameter(KEY);
 		
-		String maxResults = config.getParameter(MAX_RESULTS);
-		String maxRunningTime = config.getParameter(MAX_RUNNING_TIME);
+		int maxRequests = Integer.parseInt(config.getParameter(MAX_REQUESTS));
+		long windowLength = Long.parseLong(config.getParameter(WINDOW_LENGTH));
 		
 		if (key == null) {
 			logger.error("#GooglePlus : Stream requires authentication.");
@@ -41,8 +49,8 @@ public class GooglePlusStream extends Stream {
 		Credentials credentials = new Credentials();
 		credentials.setKey(key);
 		
-		retriever = new GooglePlusRetriever(credentials, 
-				Integer.parseInt(maxResults), Long.parseLong(maxRunningTime));
+		RateLimitsMonitor rateLimitsMonitor = new RateLimitsMonitor(maxRequests, windowLength);
+		retriever = new GooglePlusRetriever(credentials, rateLimitsMonitor);
 		
 	}
 	

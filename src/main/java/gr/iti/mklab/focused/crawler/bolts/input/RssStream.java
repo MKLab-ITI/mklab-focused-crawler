@@ -11,7 +11,15 @@ import gr.iti.mklab.framework.retrievers.impl.RssRetriever;
  */
 public class RssStream extends Stream {
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -7544635876521793503L;
 	public static Source SOURCE = Source.RSS;
+	
+	public RssStream(Configuration config) {
+		super(config);
+	}
 	
 	@Override
 	public void open(Configuration config) {

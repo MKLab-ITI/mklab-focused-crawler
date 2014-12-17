@@ -5,6 +5,7 @@ import org.apache.log4j.Logger;
 import gr.iti.mklab.framework.Credentials;
 import gr.iti.mklab.framework.common.domain.Source;
 import gr.iti.mklab.framework.common.domain.config.Configuration;
+import gr.iti.mklab.framework.retrievers.RateLimitsMonitor;
 import gr.iti.mklab.framework.retrievers.impl.YoutubeRetriever;
 
 /**
@@ -15,12 +16,21 @@ import gr.iti.mklab.framework.retrievers.impl.YoutubeRetriever;
  */
 public class YoutubeStream extends Stream {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 6164270228594034798L;
+
 	public static Source SOURCE = Source.Youtube;
 	
 	private Logger logger = Logger.getLogger(YoutubeStream.class);
 	
 	private String clientId;
 	private String developerKey;
+	
+	public YoutubeStream(Configuration config) {
+		super(config);
+	}
 	
 	@Override
 	public void open(Configuration config) {
@@ -33,8 +43,9 @@ public class YoutubeStream extends Stream {
 		
 		this.clientId = config.getParameter(CLIENT_ID);
 		this.developerKey = config.getParameter(KEY);
-		String maxResults = config.getParameter(MAX_RESULTS);
-		String maxRunningTime = config.getParameter(MAX_RUNNING_TIME);
+		
+		int maxRequests = Integer.parseInt(config.getParameter(MAX_REQUESTS));
+		long windowLength = Long.parseLong(config.getParameter(WINDOW_LENGTH));
 		
 		if (clientId == null || developerKey == null) {
 			logger.error("#YouTube : Stream requires authentication.");
@@ -44,9 +55,8 @@ public class YoutubeStream extends Stream {
 		credentials.setKey(developerKey);
 		credentials.setClientId(clientId);
 		
-		retriever = new YoutubeRetriever(credentials, Integer.parseInt(maxResults),
-				Long.parseLong(maxRunningTime));
-
+		RateLimitsMonitor rateLimitsMonitor = new RateLimitsMonitor(maxRequests, windowLength);
+		retriever = new YoutubeRetriever(credentials, rateLimitsMonitor);
 	}
 	
 	@Override
