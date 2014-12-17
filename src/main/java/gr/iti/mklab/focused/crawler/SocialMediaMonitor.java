@@ -9,7 +9,7 @@ import org.apache.log4j.Logger;
 import gr.iti.mklab.focused.crawler.bolts.items.EntityExtractionBolt;
 import gr.iti.mklab.focused.crawler.bolts.items.EventDetectionBolt;
 import gr.iti.mklab.focused.crawler.bolts.items.ItemDeserializationBolt;
-import gr.iti.mklab.focused.crawler.bolts.items.POSTaggingBolt;
+import gr.iti.mklab.focused.crawler.bolts.items.PosTaggingBolt;
 import gr.iti.mklab.focused.crawler.bolts.items.TokenizationBolt;
 import gr.iti.mklab.focused.crawler.spouts.RedisSpout;
 import backtype.storm.Config;
@@ -97,7 +97,7 @@ public class SocialMediaMonitor {
 			itemDeserializer = new ItemDeserializationBolt(itemsChannel);
 
 			entityExtractor = new EntityExtractionBolt(nerModel);
-			posTagger = new POSTaggingBolt(POSModel);
+			posTagger = new PosTaggingBolt(POSModel);
 			
 			tokenizer = new TokenizationBolt(TokenizationBolt.TokenType.NE);
 			

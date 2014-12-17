@@ -1,4 +1,4 @@
-package gr.iti.mklab.focused.crawler.input;
+package gr.iti.mklab.focused.crawler.bolts.input;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,13 +17,12 @@ import gr.iti.mklab.framework.retrievers.Retriever;
  * a social network or a news feed source.
  * It is responsible for the configuration of the connection to the selected API
  * and the retrieval/storing of relevant content.
- * @author manosetro
+ * 
+ * @author Manos Schinas
  * @email  manosetro@iti.gr
- * @author ailiakop
- * @email  ailiakop@iti.gr
  *
  */
-public abstract class Stream {//implements Runnable {
+public abstract class Stream {
 
 	protected static final String KEY = "Key";
 	protected static final String SECRET = "Secret";

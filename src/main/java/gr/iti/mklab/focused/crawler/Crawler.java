@@ -1,10 +1,13 @@
 package gr.iti.mklab.focused.crawler;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.UnknownHostException;
 
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.XMLConfiguration;
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.apache.log4j.Logger;
+import org.xml.sax.SAXException;
 
 import gr.iti.mklab.focused.crawler.bolts.media.MediaItemDeserializationBolt;
 import gr.iti.mklab.focused.crawler.bolts.media.MediaTextIndexerBolt;
@@ -18,6 +21,7 @@ import gr.iti.mklab.focused.crawler.bolts.webpages.MediaExtractionBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.TextIndexerBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.URLExpansionBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.WebPageDeserializationBolt;
+import gr.iti.mklab.focused.crawler.config.CrawlerConfiguration;
 import gr.iti.mklab.focused.crawler.spouts.RedisSpout;
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
@@ -32,9 +36,9 @@ import backtype.storm.topology.base.BaseRichSpout;
 /**
  *	@author Manos Schinas - manosetro@iti.gr
  *
- *	Entry class for SocialSensor focused crawling.  
- *  This class defines a storm-based pipeline (topology) for the processing of MediaItems and WebPages
- *  collected by StreamManager.
+ *	Entry class for MKLAB focused crawling.  
+ *  This class defines a storm-based pipeline (topology) for the processing of 
+ *  items, MediaItemsa and WebPages.
  *  
  *  For more information on Storm distributed processing check this tutorial:
  *  https://github.com/nathanmarz/storm/wiki/Tutorial
@@ -46,17 +50,23 @@ public class Crawler {
 	
 	public static void main(String[] args) throws UnknownHostException {
 		
-		XMLConfiguration config;
+		CrawlerConfiguration config;
 		try {
 			if(args.length == 1) {
-				config = new XMLConfiguration(args[0]);
+				config = CrawlerConfiguration.readFromFile(new File(args[0]));
 			}
 			else {
-				config = new XMLConfiguration("./conf/socialsensor.crawler.xml");
+				config = CrawlerConfiguration.readFromFile(new File("./conf/socialsensor.crawler.xml"));
 			}
 		}
-		catch(ConfigurationException ex) {
-			logger.error(ex);
+		catch (ParserConfigurationException e) {
+			logger.error(e);
+			return;
+		} catch (SAXException e) {
+			logger.error(e);
+			return;
+		} catch (IOException e) {
+			logger.error(e);
 			return;
 		}
 		
@@ -70,7 +80,7 @@ public class Crawler {
 		
         // Run topology
         String name = "Crawler";
-        boolean local = config.getBoolean("topology.local", true);
+        boolean local = Boolean.parseBoolean(config.getParameter("topology.local"));
         
         Config conf = new Config();
         conf.setDebug(false);
@@ -78,7 +88,7 @@ public class Crawler {
         if(!local) {
         	logger.info("Submit topology to Storm cluster");
 			try {
-				int workers = config.getInt("topology.workers", 2);
+				int workers = Integer.parseInt(config.getParameter("topology.workers"));
 				conf.setNumWorkers(workers);
 				
 				StormSubmitter.submitTopology(name, conf, topology);
@@ -103,25 +113,25 @@ public class Crawler {
 		}
 	}
 	
-	public static StormTopology createTopology(XMLConfiguration config) throws Exception {
+	public static StormTopology createTopology(CrawlerConfiguration config) throws Exception {
 		
 		// Get Params from config file
 		
 		// Redis
-		String redisHost = config.getString("redis.hostname");
-		String webPagesChannel = config.getString("redis.webPagesChannel");
-		String mediaItemsChannel = config.getString("redis.mediaItemsChannel");
+		String redisHost = config.getParameter("redis.hostname");
+		String webPagesChannel = config.getParameter("redis.webPagesChannel");
+		String mediaItemsChannel = config.getParameter("redis.mediaItemsChannel");
 		
 		// MongoDB
-		String mongodbHostname = config.getString("mongodb.hostname");
-		String mediaItemsDB = config.getString("mongodb.mediaItemsDB");
-		String streamUsersDB = config.getString("mongodb.streamUsersDB");
+		String mongodbHostname = config.getParameter("mongodb.hostname");
+		String mediaItemsDB = config.getParameter("mongodb.mediaItemsDB");
+		String streamUsersDB = config.getParameter("mongodb.streamUsersDB");
 		
 		// Visual Index
-		String visualIndexHostname = config.getString("visualindex.hostname");
-		String visualIndexCollection = config.getString("visualindex.collection");
+		String visualIndexHostname = config.getParameter("visualindex.hostname");
+		String visualIndexCollection = config.getParameter("visualindex.collection");
 		
-		String learningFiles = config.getString("visualindex.learningfiles");
+		String learningFiles = config.getParameter("visualindex.learningfiles");
 		if(!learningFiles.endsWith("/"))
 			learningFiles = learningFiles + "/";
 		
@@ -134,11 +144,11 @@ public class Crawler {
 		String pcaFile = learningFiles + "pca_surf_4x128_32768to1024.txt";
 		
 		// Solr Index
-		String textIndexHostname = config.getString("textindex.hostname");
-		String textIndexCollection = config.getString("textindex.collections.webpages");
+		String textIndexHostname = config.getParameter("textindex.hostname");
+		String textIndexCollection = config.getParameter("textindex.collections.webpages");
 		String textIndexService = textIndexHostname + "/" + textIndexCollection;
 		
-		String mediaTextIndexCollection = config.getString("textindex.collections.media");
+		String mediaTextIndexCollection = config.getParameter("textindex.collections.media");
 		String mediaTextIndexService = textIndexHostname + "/" + mediaTextIndexCollection;
 		
 		// Initialize spouts and bolts

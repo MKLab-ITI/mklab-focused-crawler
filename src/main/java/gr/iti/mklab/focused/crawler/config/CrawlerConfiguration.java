@@ -1,4 +1,4 @@
-package gr.iti.mklab.focused.crawler;
+package gr.iti.mklab.focused.crawler.config;
 
 import java.io.File;
 import java.io.IOException;
@@ -143,7 +143,7 @@ public class CrawlerConfiguration extends Configuration {
 		dao.save(this);
 	}
 	
-	public static Configuration readFromFile(File file) throws ParserConfigurationException, SAXException, IOException {
+	public static CrawlerConfiguration readFromFile(File file) throws ParserConfigurationException, SAXException, IOException {
 		SAXParserFactory factory = SAXParserFactory.newInstance();
 		SAXParser parser = factory.newSAXParser();
 		ParseHandler handler = new ParseHandler();

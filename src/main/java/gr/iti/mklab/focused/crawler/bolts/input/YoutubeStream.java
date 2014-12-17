@@ -1,4 +1,4 @@
-package gr.iti.mklab.focused.crawler.input;
+package gr.iti.mklab.focused.crawler.bolts.input;
 
 import org.apache.log4j.Logger;
 

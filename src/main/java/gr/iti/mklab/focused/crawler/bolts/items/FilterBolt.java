@@ -1,6 +1,6 @@
 package gr.iti.mklab.focused.crawler.bolts.items;
 
-import gr.iti.mklab.focused.crawler.CrawlerConfiguration;
+import gr.iti.mklab.focused.crawler.config.CrawlerConfiguration;
 import gr.iti.mklab.focused.crawler.filters.ItemFilter;
 import gr.iti.mklab.framework.common.domain.Item;
 import gr.iti.mklab.framework.common.domain.config.Configuration;

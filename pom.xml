@@ -116,14 +116,16 @@
 		</dependency>
 		
 		<dependency>
-			<groupId>eu.socialsensor</groupId>
-			<artifactId>mm-concept-detection</artifactId>
-			<version>0.1-SNAPSHOT</version>
+			<groupId>edu.stanford.nlp</groupId>
+			<artifactId>stanford-corenlp</artifactId>
+			<version>3.3.1</version>
 		</dependency>
+		
 		<dependency>
 			<groupId>edu.stanford.nlp</groupId>
 			<artifactId>stanford-corenlp</artifactId>
 			<version>3.3.1</version>
+			<classifier>models</classifier>
 		</dependency>
 		
 		<dependency>

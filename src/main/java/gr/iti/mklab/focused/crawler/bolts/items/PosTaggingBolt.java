@@ -17,7 +17,7 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 
-public class POSTaggingBolt extends BaseRichBolt {
+public class PosTaggingBolt extends BaseRichBolt {
 
 	/**
 	 * 
@@ -29,7 +29,7 @@ public class POSTaggingBolt extends BaseRichBolt {
 	private String _taggerModelFile; 
 	private MaxentTagger _tagger = null;
 	
-	public POSTaggingBolt(String taggerModelFile) {
+	public PosTaggingBolt(String taggerModelFile) {
 		_taggerModelFile = taggerModelFile;
 	}
 	
@@ -63,24 +63,11 @@ public class POSTaggingBolt extends BaseRichBolt {
 		List<TaggedWord> taggedSentences = new ArrayList<TaggedWord>();
 		List<List<HasWord>> sentences = MaxentTagger.tokenizeText(new StringReader(text));
 		for(List<HasWord> sentence : sentences) {
-			ArrayList<TaggedWord> taggedWords = _tagger.tagSentence(sentence);	
+			List<TaggedWord> taggedWords = _tagger.tagSentence(sentence);	
 			taggedSentences.addAll(taggedWords);
 		}
 		
 		return taggedSentences;
 	}
-	
-	/*
-	private List<List<TaggedWord>> tagSentences(String text) {
-		List<List<TaggedWord>> taggedSentences = new ArrayList<List<TaggedWord>>();
-		List<List<HasWord>> sentences = MaxentTagger.tokenizeText(new StringReader(text));
-		for(List<HasWord> sentence : sentences) {
-			ArrayList<TaggedWord> taggedWords = _tagger.tagSentence(sentence);	
-			taggedSentences.add(taggedWords);
-		}
-		
-		return taggedSentences;
-	}
-	*/
 	
 }
