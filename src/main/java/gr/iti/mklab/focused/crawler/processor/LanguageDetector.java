@@ -24,7 +24,7 @@ public class LanguageDetector extends Processor {
 
 	@Override
 	public void process(Item item) {
-		String lang = item.getLang();
+		String lang = item.getLanguage();
 		if(lang == null) {
 			// detect lang
 			String text = null;
@@ -46,7 +46,7 @@ public class LanguageDetector extends Processor {
 				
 				detector.append(text);
 				lang = detector.detect();
-				item.setLang(lang);
+				item.setLanguage(lang);
 				
 			} catch (LangDetectException e) {
 				Logger.getLogger(LanguageDetector.class).info("No features in text: " + text);

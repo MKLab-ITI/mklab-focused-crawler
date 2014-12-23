@@ -29,7 +29,7 @@ public class LanguageItemFilter extends ItemFilter {
 	@Override
 	public boolean accept(Item item) {
 		
-		String lang = item.getLang();
+		String lang = item.getLanguage();
 		if(lang == null) {
 			incrementDiscarded();
 			return false;
