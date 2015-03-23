@@ -1,6 +1,7 @@
 package gr.iti.mklab.focused.crawler.bolts.items;
 
 import gr.iti.mklab.framework.client.search.solr.SolrItemHandler;
+import gr.iti.mklab.framework.client.search.solr.beans.ItemBean;
 import gr.iti.mklab.framework.common.domain.Item;
 
 import java.util.ArrayList;
@@ -81,7 +82,12 @@ public class ItemIndexerBolt extends BaseRichBolt {
 						queue.drainTo(items);
 					}
 					
-					boolean inserted = _solrItemHandler.insert(items);
+					List<ItemBean> itemBeans = new ArrayList<ItemBean>();
+					for(Item item : items) {
+						ItemBean itemBean = new ItemBean(item);
+						itemBeans.add(itemBean);
+					}
+					boolean inserted = _solrItemHandler.insert(itemBeans);
 					
 					if(inserted) {
 						_logger.info(items.size() + " items indexed in Solr");

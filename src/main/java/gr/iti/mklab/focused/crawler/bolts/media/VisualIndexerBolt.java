@@ -20,9 +20,8 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.log4j.Logger;
 
 import gr.iti.mklab.focused.crawler.models.ImageVector;
-import gr.iti.mklab.framework.client.search.visual.JsonResultSet;
-import gr.iti.mklab.framework.client.search.visual.JsonResultSet.JsonResult;
-import gr.iti.mklab.framework.client.search.visual.VisualIndexHandler;
+import gr.iti.mklab.framework.client.search.visual.VisualIndexClient;
+import gr.iti.mklab.framework.client.search.visual.VisualIndexResponse;
 import gr.iti.mklab.framework.common.domain.MediaItem;
 import gr.iti.mklab.visual.aggregation.VladAggregatorMultipleVocabularies;
 import gr.iti.mklab.visual.dimreduction.PCA;
@@ -48,7 +47,7 @@ public class VisualIndexerBolt extends BaseRichBolt {
 	private Logger _logger;
 	
 	private OutputCollector _collector;
-	private VisualIndexHandler _visualIndex;
+	private VisualIndexClient _visualIndex;
 
 	private String _webServiceHost;
 	private String _indexCollection;
@@ -89,7 +88,7 @@ public class VisualIndexerBolt extends BaseRichBolt {
 		_logger = Logger.getLogger(VisualIndexerBolt.class);
 		
 		_collector = collector;
-		_visualIndex = new VisualIndexHandler(_webServiceHost, _indexCollection);
+		_visualIndex = new VisualIndexClient(_webServiceHost, _indexCollection);
 
 		_requestConfig = RequestConfig.custom()
 		        .setSocketTimeout(30000)
@@ -164,8 +163,8 @@ public class VisualIndexerBolt extends BaseRichBolt {
 				imageVector = new ImageVector(id, url, vector);
 				//boolean indexed = _visualIndex.index(id, vector);
 				
-				JsonResultSet similar = _visualIndex.getSimilarImagesAndIndex(id, vector, 0.85);
-				List<JsonResult> nearestMediaItems = similar.getResults();
+				VisualIndexResponse similar = _visualIndex.getSimilarImagesAndIndex(id, vector, 0.85);
+				List<gr.iti.mklab.framework.client.search.visual.VisualIndexResponse.JsonResult> nearestMediaItems = similar.getResults();
 				if(!nearestMediaItems.isEmpty()) {
 					nearestMediaItem = nearestMediaItems.get(0).getId();
 				}

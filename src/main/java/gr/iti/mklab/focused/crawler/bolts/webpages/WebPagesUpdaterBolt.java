@@ -76,7 +76,6 @@ public class WebPagesUpdaterBolt extends BaseRichBolt {
 				// Update existing web page
 				
 				UpdateOperations<WebPage> ops = _webPageDAO.createUpdateOperations();
-				ops.set("status", webPage.getStatus());
 				ops.set("isArticle", webPage.isArticle());
 				ops.set("text", webPage.getText());
 				ops.set("domain", webPage.getDomain());

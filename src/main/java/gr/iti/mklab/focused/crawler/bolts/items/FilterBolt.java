@@ -1,13 +1,8 @@
 package gr.iti.mklab.focused.crawler.bolts.items;
 
 import gr.iti.mklab.focused.crawler.config.CrawlerConfiguration;
-import gr.iti.mklab.focused.crawler.filters.ItemFilter;
 import gr.iti.mklab.framework.common.domain.Item;
-import gr.iti.mklab.framework.common.domain.config.Configuration;
 
-import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -28,7 +23,7 @@ public class FilterBolt extends BaseRichBolt {
 	private static final long serialVersionUID = -5045947580716989342L;
 
 	private Logger logger;
-	private Collection<ItemFilter> filters = new ArrayList<ItemFilter>();
+	//private Collection<ItemFilter> filters = new ArrayList<ItemFilter>();
 
 	private CrawlerConfiguration config;
 	private OutputCollector collector;
@@ -49,11 +44,11 @@ public class FilterBolt extends BaseRichBolt {
 	@Override
 	public void execute(Tuple input) {	
 		Item item = (Item) input.getValueByField("Item");
-		for(ItemFilter filter : filters) {
-			if(!filter.accept(item)) {
-				return;
-			}
-		}
+		//for(ItemFilter filter : filters) {
+		//	if(!filter.accept(item)) {
+		//		return;
+		//	}
+		//}
 		
 		collector.emit(new Values(item));
 	}
@@ -66,12 +61,12 @@ public class FilterBolt extends BaseRichBolt {
 	private void createFilters(CrawlerConfiguration config) {
 		for (String filterId : config.getFilterIds()) {
 			try {
-				Configuration fconfig = config.getFilterConfig(filterId);
-				String className = fconfig.getParameter(Configuration.CLASS_PATH);
-				Constructor<?> constructor = Class.forName(className).getConstructor(Configuration.class);
-				ItemFilter filterInstance = (ItemFilter) constructor.newInstance(fconfig);
+				//Configuration fconfig = config.getFilterConfig(filterId);
+				//String className = fconfig.getParameter(Configuration.CLASS_PATH);
+				//Constructor<?> constructor = Class.forName(className).getConstructor(Configuration.class);
+				//ItemFilter filterInstance = (ItemFilter) constructor.newInstance(fconfig);
 			
-				filters.add(filterInstance);
+				//filters.add(filterInstance);
 			}
 			catch(Exception e) {
 				logger.error("Error during filter " + filterId + "initialization", e);

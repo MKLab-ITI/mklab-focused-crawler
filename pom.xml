@@ -48,29 +48,28 @@
 			<artifactId>httpclient</artifactId>
 			<version>4.3.2</version>
 		</dependency>
-		
 		<dependency>
-			<groupId>de.l3s.boilerpipe</groupId>
-			<artifactId>boilerpipe</artifactId>
-			<version>1.1.0</version>
-		</dependency>
-		
+  			<groupId>com.syncthemall</groupId>
+  			<artifactId>boilerpipe</artifactId>
+  			<version>1.2.2</version>
+  		</dependency>
+  	
 		<dependency>
 			<groupId>gr.iti.mklab</groupId>
 			<artifactId>mklab-framework-common</artifactId>
-			<version>0.1-SNAPSHOT</version>
+			<version>0.2-SNAPSHOT</version>
 		</dependency>
 		
 		<dependency>
 			<groupId>gr.iti.mklab</groupId>
 			<artifactId>mklab-socialmedia-abstractions</artifactId>
-			<version>0.1-SNAPSHOT</version>
+			<version>0.2-SNAPSHOT</version>
 		</dependency>
 		
 		<dependency>
 			<groupId>gr.iti.mklab</groupId>
 			<artifactId>mklab-framework-client</artifactId>
-			<version>0.1-SNAPSHOT</version>
+			<version>0.2-SNAPSHOT</version>
 		</dependency>
 		
 		<dependency>
@@ -133,7 +132,12 @@
         	<artifactId>langdetect</artifactId>
         	<version>1.1-20120112</version>
         </dependency>
-        
+
+		<dependency>
+			<groupId>commons-configuration</groupId>
+			<artifactId>commons-configuration</artifactId>
+			<version>1.10</version>
+		</dependency>
   	</dependencies>
 	
 	<repositories>
@@ -155,9 +159,7 @@
                     <source>1.6</source>
                     <target>1.6</target>
                 </configuration>
-         
             </plugin>
-            
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
@@ -170,7 +172,6 @@
                     </execution>
                 </executions>
             </plugin>
-        
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
@@ -183,7 +184,6 @@
                     </execution>
                 </executions>
             </plugin>
-            
         	<plugin>
         		<groupId>org.apache.maven.plugins</groupId>
           		<artifactId>maven-shade-plugin</artifactId>

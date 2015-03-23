@@ -18,9 +18,9 @@ import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
 
 import gr.iti.mklab.framework.client.mongo.DAOFactory;
-import gr.iti.mklab.framework.client.search.visual.JsonResultSet;
-import gr.iti.mklab.framework.client.search.visual.JsonResultSet.JsonResult;
-import gr.iti.mklab.framework.client.search.visual.VisualIndexHandler;
+import gr.iti.mklab.framework.client.search.visual.VisualIndexClient;
+import gr.iti.mklab.framework.client.search.visual.VisualIndexResponse;
+import gr.iti.mklab.framework.client.search.visual.VisualIndexResponse.JsonResult;
 import gr.iti.mklab.framework.common.domain.Cluster;
 import gr.iti.mklab.framework.common.domain.MediaItem;
 import backtype.storm.task.OutputCollector;
@@ -54,7 +54,7 @@ public class ClustererBolt extends BaseRichBolt {
 	private Map<String, String> newClusters = new HashMap<String, String>();
 	private Map<String, String> existingClusters = new HashMap<String, String>();
 	
-	private VisualIndexHandler _visualIndex;
+	private VisualIndexClient _visualIndex;
 
 	private String vIndexHostname;
 	private String vIndexCollection;
@@ -108,7 +108,7 @@ public class ClustererBolt extends BaseRichBolt {
 				_mediaClusterDAO = daoFactory.getDAO(mongoHost, clustersDbName, Cluster.class);
 			}
 			
-			_visualIndex = new VisualIndexHandler(vIndexHostname, vIndexCollection);
+			_visualIndex = new VisualIndexClient(vIndexHostname, vIndexCollection);
 			
 			textIndexServiceHandler = new HttpSolrServer(textIndexService);
 			
@@ -132,7 +132,7 @@ public class ClustererBolt extends BaseRichBolt {
 			
 			String id = mediaItem.getId();
 			
-			JsonResultSet response = _visualIndex.getSimilarImages(id, threshold);
+			VisualIndexResponse response = _visualIndex.getSimilarImages(id, threshold);
 			
 			List<JsonResult> results = response.getResults();
 			String nearestId = null;

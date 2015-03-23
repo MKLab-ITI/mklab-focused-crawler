@@ -1,6 +1,7 @@
 package gr.iti.mklab.focused.crawler.bolts.webpages;
 
 import gr.iti.mklab.framework.client.search.solr.SolrWebPageHandler;
+import gr.iti.mklab.framework.client.search.solr.beans.WebPageBean;
 import gr.iti.mklab.framework.common.domain.WebPage;
 
 import java.util.ArrayList;
@@ -79,7 +80,12 @@ public class TextIndexerBolt extends BaseRichBolt {
 						continue;
 					}
 					
-					boolean inserted = _solrWebPageHandler.insert(webPages);
+					List<WebPageBean> beans = new ArrayList<WebPageBean>();
+					for(WebPage wp : webPages) {
+						beans.add(new WebPageBean(wp));
+					}
+					
+					boolean inserted = _solrWebPageHandler.insert(beans);
 					
 					if(inserted) {
 						logger.info(webPages.size() + " web pages indexed in Solr");

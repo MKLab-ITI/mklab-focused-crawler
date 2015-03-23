@@ -1,6 +1,7 @@
 package gr.iti.mklab.focused.crawler.bolts.media;
 
 import gr.iti.mklab.framework.client.search.solr.SolrMediaItemHandler;
+import gr.iti.mklab.framework.client.search.solr.beans.MediaItemBean;
 import gr.iti.mklab.framework.common.domain.MediaItem;
 
 import java.util.ArrayList;
@@ -88,7 +89,12 @@ public class MediaTextIndexerBolt extends BaseRichBolt {
 					if(mItems.isEmpty())
 						continue;
 					
-					boolean inserted = _solrMediaHandler.insert(mItems);
+					List<MediaItemBean> miBeans = new ArrayList<MediaItemBean>();
+					for(MediaItem mi : mItems) {
+						miBeans.add(new MediaItemBean(mi));
+					}
+
+					boolean inserted = _solrMediaHandler.insert(miBeans);
 					
 					if(inserted) {
 						logger.info(mItems.size() + " media items indexed in Solr.");

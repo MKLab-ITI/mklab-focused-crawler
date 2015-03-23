@@ -53,9 +53,6 @@ public class ArticleExtractionBolt extends BaseRichBolt {
 
 	private static final long serialVersionUID = -2548434425109192911L;
 	
-	private static final String SUCCESS = "success";
-	private static final String FAILED = "failed";
-	
 	public static String MEDIA_STREAM = "media";
 	public static String WEBPAGE_STREAM = "webpage";
 	
@@ -231,7 +228,6 @@ public class ArticleExtractionBolt extends BaseRichBolt {
 				
 				String expandedUrl = webPage.getExpandedUrl();
 				if(expandedUrl==null || expandedUrl.length()>300) {
-					webPage.setStatus(FAILED);
 					//_tupleQueue.add(webPage);
 					continue;
 				}
@@ -255,7 +251,6 @@ public class ArticleExtractionBolt extends BaseRichBolt {
 						_logger.error("URL: " + webPage.getExpandedUrl() + 
 								"   Not supported mime type: " + contentType.getMimeType());
 						
-						webPage.setStatus(FAILED);
 						//_tupleQueue.add(webPage);
 						
 						continue;
@@ -267,7 +262,6 @@ public class ArticleExtractionBolt extends BaseRichBolt {
 					List<MediaItem> mediaItems = new ArrayList<MediaItem>();
 					boolean parsed = parseWebPage(webPage, content, mediaItems);
 					if(parsed) { 
-						webPage.setStatus(SUCCESS);
 						_tupleQueue.add(webPage);
 						for(MediaItem mItem : mediaItems) {
 							_tupleQueue.add(mItem);
@@ -275,12 +269,10 @@ public class ArticleExtractionBolt extends BaseRichBolt {
 					}
 					else {
 						_logger.error("Parsing of " + expandedUrl + " failed.");
-						webPage.setStatus(FAILED);
 						//_tupleQueue.add(webPage);
 					}
 				} catch (Exception e) {
 					_logger.error("for " + expandedUrl, e);
-					webPage.setStatus(FAILED);
 					//_tupleQueue.add(webPage);
 				}
 				finally {
@@ -461,7 +453,7 @@ public class ArticleExtractionBolt extends BaseRichBolt {
 			mediaItem.setThumbnail(url.toString());
 			
 			mediaItem.setPageUrl(base.toString());
-			mediaItem.setRef(webPage.getReference());
+			mediaItem.setReference(webPage.getReference());
 			
 			mediaItem.setShares((long)webPage.getShares());
 			

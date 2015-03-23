@@ -93,18 +93,18 @@ public class MediaExtractionBolt extends BaseRichBolt {
 				webPage.setMedia(1);
 				String[] mediaIds = {mediaItem.getId()};
 				webPage.setMediaIds(mediaIds);
-				mediaItem.setRef(webPage.getReference());
+				mediaItem.setReference(webPage.getReference());
 			}
 			
 			synchronized(_collector) {
 				if(mediaItem != null) { 
-					webPage.setStatus(SUCCESS);
+					//webPage.setStatus(SUCCESS);
 					_collector.emit(WEBPAGE_STREAM, tuple(webPage));
 					_collector.emit(MEDIA_STREAM, tuple(mediaItem));
 				}
 				else {
 					logger.error(webPage.getExpandedUrl() + " failed due to null media item");
-					webPage.setStatus(FAILED);
+					//webPage.setStatus(FAILED);
 					_collector.emit(WEBPAGE_STREAM, tuple(webPage));
 				}
 			}
@@ -112,7 +112,7 @@ public class MediaExtractionBolt extends BaseRichBolt {
 			logger.error(webPage.getExpandedUrl() + " failed due to exception");
 			logger.error(e);
 			synchronized(_collector) {
-				webPage.setStatus(FAILED);
+				//webPage.setStatus(FAILED);
 				_collector.emit(WEBPAGE_STREAM, tuple(webPage));
 			}
 		}
