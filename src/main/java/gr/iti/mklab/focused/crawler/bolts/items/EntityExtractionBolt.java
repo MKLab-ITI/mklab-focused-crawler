@@ -112,7 +112,8 @@ public class EntityExtractionBolt extends BaseRichBolt {
             	NamedEntity entity = entities.get(key);
                 entity.setCount(entity.getCount() + 1);
             } else {
-                entities.put(key, new NamedEntity(nodeList.item(i).getTextContent(), 1, tag));
+            	NamedEntity e = new NamedEntity(nodeList.item(i).getTextContent(), tag);
+                entities.put(key, e);
             }
         }
     }
