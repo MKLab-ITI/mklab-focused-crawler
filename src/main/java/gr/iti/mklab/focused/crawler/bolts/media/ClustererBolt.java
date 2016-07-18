@@ -23,11 +23,11 @@ import gr.iti.mklab.framework.client.search.visual.VisualIndexResponse;
 import gr.iti.mklab.framework.client.search.visual.VisualIndexResponse.JsonResult;
 import gr.iti.mklab.framework.common.domain.Cluster;
 import gr.iti.mklab.framework.common.domain.MediaItem;
-import backtype.storm.task.OutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.topology.base.BaseRichBolt;
-import backtype.storm.tuple.Tuple;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.tuple.Tuple;
 
 /**
  *	@author Manos Schinas - manosetro@iti.gr

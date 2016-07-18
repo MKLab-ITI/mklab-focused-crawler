@@ -8,18 +8,21 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
+import org.bson.Document;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 
-import backtype.storm.task.OutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.topology.base.BaseRichBolt;
-import backtype.storm.tuple.Tuple;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.tuple.Tuple;
 
 public class ItemsCounterBolt extends BaseRichBolt {
 
@@ -46,23 +49,21 @@ public class ItemsCounterBolt extends BaseRichBolt {
 		
 		logger = Logger.getLogger(ItemsCounterBolt.class);
 		
-		try {
-			MongoClient client = new MongoClient(mongoHostName);
-			DB db  = client.getDB(mongodbName);
-			
-			Runnable updater = new ItemCounterUpdater(db);
-			Thread thread = new Thread(updater);
-			
-			thread.start();
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
+		MongoClient client = new MongoClient(mongoHostName);
+		MongoDatabase db  = client.getDatabase(mongodbName);
+		
+		Runnable updater = new ItemCounterUpdater(db);
+		Thread thread = new Thread(updater);
+		
+		thread.start();
 	}
 
 	public void execute(Tuple input) {
+		
 		Item item = (Item) input.getValueByField("Item");
-		if(item == null)
+		if(item == null) {
 			return;
+		}
 		
 		String[] itemTags = item.getTags();
 		if(itemTags != null && itemTags.length>0) {
@@ -92,9 +93,10 @@ public class ItemsCounterBolt extends BaseRichBolt {
 
 	public class ItemCounterUpdater implements Runnable {
 
-		private DBCollection _tagsCollection, _contributorsCollection;
+		MongoCollection<Document> _tagsCollection;
+		private MongoCollection<Document> _contributorsCollection;
 
-		public ItemCounterUpdater(DB db) {
+		public ItemCounterUpdater(MongoDatabase db) {
 			_tagsCollection = db.getCollection("tags");
 			_contributorsCollection = db.getCollection("contributor");
 		}
@@ -114,7 +116,7 @@ public class ItemsCounterBolt extends BaseRichBolt {
 					for(Entry<String, Integer> tagEntry : tags.entrySet()) {
 						DBObject q = new BasicDBObject("tag", tagEntry.getKey());
 						DBObject o = new BasicDBObject("$inc", new BasicDBObject("count", tagEntry.getValue()));
-						_tagsCollection.update(q, o, true, false);
+						//_tagsCollection.update(q, o, true, false);
 					}
 					tags.clear();
 				}
@@ -124,7 +126,7 @@ public class ItemsCounterBolt extends BaseRichBolt {
 					for(Entry<String, Integer> contributorEntry : contributors.entrySet()) {
 						DBObject q = new BasicDBObject("contributor", contributorEntry.getKey());
 						DBObject o = new BasicDBObject("$inc", new BasicDBObject("count", contributorEntry.getValue()));
-						_contributorsCollection.update(q, o, true, false);
+						//_contributorsCollection.update(q, o, true, false);
 					}
 					contributors.clear();
 				}

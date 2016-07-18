@@ -1,21 +1,22 @@
 package gr.iti.mklab.focused.crawler.bolts.webpages;
 
-import static backtype.storm.utils.Utils.tuple;
+import static org.apache.storm.utils.Utils.tuple;
 
 import java.util.Date;
 import java.util.Map;
 import java.util.PriorityQueue;
 
 import org.apache.log4j.Logger;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.utils.Utils;
 
 import gr.iti.mklab.framework.common.domain.WebPage;
-import backtype.storm.task.OutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.topology.base.BaseRichBolt;
-import backtype.storm.tuple.Fields;
-import backtype.storm.tuple.Tuple;
-import backtype.storm.utils.Utils;
+
 
 public class RankerBolt extends BaseRichBolt {
 

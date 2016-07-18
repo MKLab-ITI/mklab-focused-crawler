@@ -4,21 +4,27 @@ import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.bson.Document;
+import org.bson.conversions.Bson;
+
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
+import com.mongodb.client.MongoDatabase;
 
-import static backtype.storm.utils.Utils.tuple;
-
-import backtype.storm.spout.SpoutOutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.topology.base.BaseRichSpout;
-import backtype.storm.tuple.Fields;
-import backtype.storm.utils.Utils;
+import static org.apache.storm.utils.Utils.tuple;
+import org.apache.storm.spout.SpoutOutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseRichSpout;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.utils.Utils;
 
 public class MongoDbSpout extends BaseRichSpout {
 
@@ -34,17 +40,17 @@ public class MongoDbSpout extends BaseRichSpout {
 	private SpoutOutputCollector _collector;
 	
 	private MongoClient _mongo = null;
-	private DB _database = null;
+	private MongoDatabase _database = null;
 
-	private DBObject _query;
+	private Bson _query;
 
-	private LinkedBlockingQueue<DBObject> _queue;
+	private LinkedBlockingQueue<Document> _queue;
 
 	private CursorThread _listener = null;
 	
-	private DBCollection _collection;
+	private MongoCollection<Document> _collection;
 	
-	public MongoDbSpout(String mongoHost, String mongoDbName, String mongoCollectionName, DBObject query) {
+	public MongoDbSpout(String mongoHost, String mongoDbName, String mongoCollectionName, Bson query) {
 		this._mongoHost = mongoHost;
 		this._mongoDbName = mongoDbName;
 		this._mongoCollectionName = mongoCollectionName;
@@ -63,15 +69,11 @@ public class MongoDbSpout extends BaseRichSpout {
 		}
 		
 		_collector = collector;
-		_queue = new LinkedBlockingQueue<DBObject>(10000);
+		_queue = new LinkedBlockingQueue<Document>(10000);
 		
-		try {
-			_mongo = new MongoClient(_mongoHost);
-			_database = _mongo.getDB(_mongoDbName);
-			_collection = _database.getCollection(_mongoCollectionName);
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
+		_mongo = new MongoClient(_mongoHost);
+		_database = _mongo.getDatabase(_mongoDbName);
+		_collection = _database.getCollection(_mongoCollectionName);
 
 		_listener  = new CursorThread(_queue, _database, _mongoCollectionName, _query);
 		_listener.start();
@@ -79,7 +81,7 @@ public class MongoDbSpout extends BaseRichSpout {
 
 	public void nextTuple() {
 		
-		DBObject obj = _queue.poll();
+		Document obj = _queue.poll();
 		if(obj == null) {
             Utils.sleep(100);
         } else {    	
@@ -87,7 +89,7 @@ public class MongoDbSpout extends BaseRichSpout {
         		_collector.emit(tuple(obj.toString()));
         	}
         	
-    		_collection.update(
+    		_collection.updateOne(
     			new BasicDBObject("_id", obj.get("_id")),
     			new BasicDBObject("$set", new BasicDBObject("status", "injected"))
     		);
@@ -111,12 +113,12 @@ public class MongoDbSpout extends BaseRichSpout {
     
 	class CursorThread extends Thread {
 
-		LinkedBlockingQueue<DBObject> queue;
+		LinkedBlockingQueue<Document> queue;
 		String mongoCollectionName;
-		DB mongoDB;
-		DBObject query;
+		MongoDatabase mongoDB;
+		Bson query;
 		
-		public CursorThread(LinkedBlockingQueue<DBObject> queue, DB mongoDB, String mongoCollectionName, DBObject query) {
+		public CursorThread(LinkedBlockingQueue<Document> queue, MongoDatabase mongoDB, String mongoCollectionName, Bson query) {
 			
 			this.queue = queue;
 			this.mongoDB = mongoDB;
@@ -126,11 +128,12 @@ public class MongoDbSpout extends BaseRichSpout {
 
 		public void run() {
 			while(true) {
-				DBCursor cursor = mongoDB.getCollection(mongoCollectionName).find(query)
+				FindIterable<Document> cursor = mongoDB.getCollection(mongoCollectionName).find(query)
 						.sort(new BasicDBObject("_id", -1)).limit(100);
 				
-				while(cursor.hasNext()) {			
-					DBObject obj = cursor.next();
+				MongoCursor<Document> it = cursor.iterator();
+				while(it.hasNext()) {			
+					Document obj = it.next();
 					if(obj != null) {
 						try {
 							queue.put(obj);
@@ -148,12 +151,12 @@ public class MongoDbSpout extends BaseRichSpout {
 	public void reset(String host, String dbName, String collectionName) throws UnknownHostException {
 		
 		MongoClient client = new MongoClient(host);
-		DB db = client.getDB(dbName);
-		DBCollection collection = db.getCollection(collectionName);
+		MongoDatabase db = client.getDatabase(dbName);
+		MongoCollection<Document> collection = db.getCollection(collectionName);
 		
 		DBObject q = new BasicDBObject("status", "injected");
 		DBObject o = new BasicDBObject("$set", new BasicDBObject("status", "new"));
-		collection.update(q, o, false, true);
+		//collection.update(q, o, false, true);
 		
 	}
 	

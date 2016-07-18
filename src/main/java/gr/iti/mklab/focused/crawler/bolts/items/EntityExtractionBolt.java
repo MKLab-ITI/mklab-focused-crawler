@@ -20,13 +20,13 @@ import edu.stanford.nlp.ie.crf.CRFClassifier;
 import edu.stanford.nlp.ling.CoreLabel;
 import gr.iti.mklab.framework.common.domain.Item;
 import gr.iti.mklab.framework.common.domain.NamedEntity;
-import backtype.storm.task.OutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.topology.base.BaseRichBolt;
-import backtype.storm.tuple.Fields;
-import backtype.storm.tuple.Tuple;
-import backtype.storm.tuple.Values;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.Values;
 
 public class EntityExtractionBolt extends BaseRichBolt {
 
@@ -83,8 +83,8 @@ public class EntityExtractionBolt extends BaseRichBolt {
 
 	public List<NamedEntity> extract(String text) throws Exception {
 		Map<String, NamedEntity> entities = new HashMap<String, NamedEntity>();
-
-		String textXML = _classifier.classifyWithInlineXML(StringEscapeUtils.escapeXml(text));
+		
+		String textXML = _classifier.classifyWithInlineXML(StringEscapeUtils.escapeXml11(text));
 
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = dbf.newDocumentBuilder();

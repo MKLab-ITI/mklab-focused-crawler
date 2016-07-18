@@ -7,6 +7,16 @@ import java.net.UnknownHostException;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.apache.storm.Config;
+import org.apache.storm.LocalCluster;
+import org.apache.storm.StormSubmitter;
+import org.apache.storm.generated.AlreadyAliveException;
+import org.apache.storm.generated.AuthorizationException;
+import org.apache.storm.generated.InvalidTopologyException;
+import org.apache.storm.generated.StormTopology;
+import org.apache.storm.topology.IRichBolt;
+import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.topology.base.BaseRichSpout;
 import org.xml.sax.SAXException;
 
 import gr.iti.mklab.focused.crawler.bolts.media.MediaItemDeserializationBolt;
@@ -23,15 +33,7 @@ import gr.iti.mklab.focused.crawler.bolts.webpages.URLExpansionBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.WebPageDeserializationBolt;
 import gr.iti.mklab.focused.crawler.config.CrawlerConfiguration;
 import gr.iti.mklab.focused.crawler.spouts.RedisSpout;
-import backtype.storm.Config;
-import backtype.storm.LocalCluster;
-import backtype.storm.StormSubmitter;
-import backtype.storm.generated.AlreadyAliveException;
-import backtype.storm.generated.InvalidTopologyException;
-import backtype.storm.generated.StormTopology;
-import backtype.storm.topology.IRichBolt;
-import backtype.storm.topology.TopologyBuilder;
-import backtype.storm.topology.base.BaseRichSpout;
+
 
 /**
  *	@author Manos Schinas - manosetro@iti.gr
@@ -98,6 +100,8 @@ public class Crawler {
 			} catch (AlreadyAliveException e) {
 				logger.error(e);
 			} catch (InvalidTopologyException e) {
+				logger.error(e);
+			} catch (AuthorizationException e) {
 				logger.error(e);
 			}
 			

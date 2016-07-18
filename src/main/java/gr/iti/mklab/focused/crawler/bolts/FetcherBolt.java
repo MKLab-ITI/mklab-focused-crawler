@@ -1,6 +1,5 @@
 package gr.iti.mklab.focused.crawler.bolts;
 
-import static backtype.storm.utils.Utils.tuple;
 import gr.iti.mklab.framework.common.domain.MediaItem;
 import gr.iti.mklab.framework.common.domain.WebPage;
 
@@ -23,14 +22,14 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.log4j.Logger;
-
-import backtype.storm.task.OutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.topology.base.BaseRichBolt;
-import backtype.storm.tuple.Fields;
-import backtype.storm.tuple.Tuple;
-import backtype.storm.utils.Utils;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.Values;
+import org.apache.storm.utils.Utils;
 
 public class FetcherBolt extends BaseRichBolt {
 
@@ -138,12 +137,11 @@ public class FetcherBolt extends BaseRichBolt {
 					synchronized(_collector) {
 						if(MediaItem.class.isInstance(obj.getLeft())) {
 							mediaTuples++;
-							_collector.emit(MEDIA_STREAM, 
-									tuple(obj.getLeft(), obj.getRight()));
+							_collector.emit(MEDIA_STREAM, new Values(obj.getLeft(), obj.getRight()));
 						}
 						else if(WebPage.class.isInstance(obj.getLeft())) {
 							webPagesTuples++;
-							_collector.emit(WEBPAGE_STREAM, tuple(obj.getLeft(), obj.getRight()));
+							_collector.emit(WEBPAGE_STREAM, new Values(obj.getLeft(), obj.getRight()));
 						}
 					}
 				}

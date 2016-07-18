@@ -57,19 +57,19 @@
 		<dependency>
 			<groupId>gr.iti.mklab</groupId>
 			<artifactId>mklab-framework-common</artifactId>
-			<version>0.2-SNAPSHOT</version>
+			<version>0.3-SNAPSHOT</version>
 		</dependency>
 		
 		<dependency>
 			<groupId>gr.iti.mklab</groupId>
 			<artifactId>mklab-socialmedia-abstractions</artifactId>
-			<version>0.2-SNAPSHOT</version>
+			<version>0.3-SNAPSHOT</version>
 		</dependency>
 		
 		<dependency>
 			<groupId>gr.iti.mklab</groupId>
 			<artifactId>mklab-framework-client</artifactId>
-			<version>0.2-SNAPSHOT</version>
+			<version>0.3-SNAPSHOT</version>
 		</dependency>
 		
 		<dependency>
@@ -96,11 +96,6 @@
 			<version>4.10.2</version>
 		</dependency>
 		
-		<dependency>
-			<groupId>storm</groupId>
-			<artifactId>storm</artifactId>
-			<version>0.8.2</version>
-		</dependency>
 		
 		<dependency>
   			<groupId>eu.socialsensor</groupId>
@@ -138,6 +133,13 @@
 			<artifactId>commons-configuration</artifactId>
 			<version>1.10</version>
 		</dependency>
+		
+
+		<dependency>
+			<groupId>org.apache.storm</groupId>
+			<artifactId>storm-core</artifactId>
+			<version>1.0.1</version>
+		</dependency>
   	</dependencies>
 	
 	<repositories>
@@ -145,6 +147,10 @@
   			<id>clojars.org</id>
   			<url>http://clojars.org/repo</url>
 		</repository>
+		<repository>
+    		<id>central</id>
+    		<url>http://repo1.maven.org/maven2/</url>
+  		</repository>
 	</repositories>
     
     <pluginRepositories />

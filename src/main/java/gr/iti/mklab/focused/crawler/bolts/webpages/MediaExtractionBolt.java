@@ -1,10 +1,10 @@
 package gr.iti.mklab.focused.crawler.bolts.webpages;
 
-import static backtype.storm.utils.Utils.tuple;
+import static org.apache.storm.utils.Utils.tuple;
 import gr.iti.mklab.framework.common.domain.MediaItem;
 import gr.iti.mklab.framework.common.domain.StreamUser;
 import gr.iti.mklab.framework.common.domain.WebPage;
-import gr.iti.mklab.framework.retrievers.SocialMediaRetriever;
+import gr.iti.mklab.framework.retrievers.Retriever;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,12 +13,12 @@ import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
-import backtype.storm.task.OutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.topology.base.BaseRichBolt;
-import backtype.storm.tuple.Fields;
-import backtype.storm.tuple.Tuple;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Tuple;
 
 public class MediaExtractionBolt extends BaseRichBolt {
 
@@ -45,7 +45,7 @@ public class MediaExtractionBolt extends BaseRichBolt {
 	private static Pattern facebookPattern 		= 	Pattern.compile("https*://www.facebook.com/photo.php?.*fbid=([a-zA-Z0-9_\\-]+)(&.+=.+)*");
 	private static Pattern flickrPattern 		= 	Pattern.compile("https*://flickr.com/photos/([A-Za-z0-9@]+)/([A-Za-z0-9@]+)/*.*$");
 	
-	private Map<String, SocialMediaRetriever> retrievers = new HashMap<String, SocialMediaRetriever>();
+	private Map<String, Retriever> retrievers = new HashMap<String, Retriever>();
 	
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
     	declarer.declareStream(MEDIA_STREAM, new Fields("MediaItem"));
@@ -120,7 +120,7 @@ public class MediaExtractionBolt extends BaseRichBolt {
 	}   
 	
 	private MediaItem getMediaItem(String url) {
-		SocialMediaRetriever retriever = null;
+		Retriever retriever = null;
 		String mediaId = null;
 		String source = null;
 		
