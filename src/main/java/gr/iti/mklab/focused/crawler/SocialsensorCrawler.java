@@ -109,6 +109,8 @@ public class SocialsensorCrawler {
 		
 		// Get Params from config file
 		String redisHost = config.getString("redis.hostname");
+		int redisPort = config.getInt("redis.port", 6379);
+		
 		String webPagesChannel = config.getString("redis.webPagesChannel");
 		String mediaItemsChannel = config.getString("redis.mediaItemsChannel");
 		
@@ -146,8 +148,8 @@ public class SocialsensorCrawler {
 		IRichBolt mediaUpdater, webPageUpdater, textIndexer;
 		IRichBolt visualIndexer, mediaTextIndexer;
 		
-		wpSpout = new RedisSpout(redisHost, webPagesChannel, "url");
-		miSpout = new RedisSpout(redisHost, mediaItemsChannel, "id");
+		wpSpout = new RedisSpout(redisHost, redisPort, webPagesChannel);
+		miSpout = new RedisSpout(redisHost, redisPort, mediaItemsChannel);
 			
 		wpDeserializer = new WebPageDeserializationBolt(webPagesChannel);
 		miDeserializer = new MediaItemDeserializationBolt(mediaItemsChannel);

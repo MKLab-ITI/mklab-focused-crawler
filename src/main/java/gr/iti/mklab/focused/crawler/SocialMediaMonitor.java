@@ -88,6 +88,8 @@ public class SocialMediaMonitor {
 	public static StormTopology createTopology(XMLConfiguration config) {
 	
 		String redisHost = config.getString("redis.hostname", "localhost");
+		int redisPort = config.getInt("redis.port", 6379);
+		
 		String itemsChannel = config.getString("redis.itemsChannel", "items");
 		
 		String nerModel = config.getString("ner.model", "english.all.3class.distsim.crf.ser.gz");
@@ -97,7 +99,7 @@ public class SocialMediaMonitor {
 		IRichBolt entityExtractor, posTagger;
 		IRichBolt itemDeserializer, tokenizer, eventDetector;	
 		try {
-			itemsSpout = new RedisSpout(redisHost, itemsChannel);
+			itemsSpout = new RedisSpout(redisHost, redisPort, itemsChannel);
 			itemDeserializer = new ItemDeserializationBolt(itemsChannel);
 
 			entityExtractor = new EntityExtractionBolt(nerModel);

@@ -1,12 +1,12 @@
 package gr.iti.mklab.focused.crawler.bolts.webpages;
 
 import static org.apache.storm.utils.Utils.tuple;
+import gr.iti.mklab.framework.common.domain.JSONable;
 import gr.iti.mklab.framework.common.domain.WebPage;
 
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -29,13 +29,13 @@ public class WebPageDeserializationBolt extends BaseRichBolt {
 
 	public WebPageDeserializationBolt(String inputField) {
 		this.inputField = inputField;
+		JSONable.mapClass(WebPage.class);
 	}
 	
 	public void prepare(@SuppressWarnings("rawtypes") Map stormConf, TopologyContext context,
 			OutputCollector collector) {
 		this._collector = collector;	
 		_logger = Logger.getLogger(WebPageDeserializationBolt.class);
-
 	}
 
 	public void execute(Tuple input) {
@@ -46,6 +46,7 @@ public class WebPageDeserializationBolt extends BaseRichBolt {
 				_collector.emit(tuple(webPage));
 			}
 		} catch(Exception e) {
+			e.printStackTrace();
 			_logger.error("Exception: "+e.getMessage());
 		}
 	}

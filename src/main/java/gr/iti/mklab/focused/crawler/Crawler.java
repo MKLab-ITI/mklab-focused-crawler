@@ -164,8 +164,8 @@ public class Crawler {
 		IRichBolt miStatusChecker, visualIndexer, mediaTextIndexer, clusterer, mediaUpdater;
 		IRichBolt redisBolt;
 		
-		wpSpout = new RedisSpout(redisHost, webPagesChannel, "url");
-		miSpout = new RedisSpout(redisHost, mediaItemsChannel, "id");
+		wpSpout = new RedisSpout(redisHost, 6379, webPagesChannel);
+		miSpout = new RedisSpout(redisHost, 6379, mediaItemsChannel);
 			
 		wpDeserializer = new WebPageDeserializationBolt(webPagesChannel);
 		miDeserializer = new MediaItemDeserializationBolt(mediaItemsChannel);

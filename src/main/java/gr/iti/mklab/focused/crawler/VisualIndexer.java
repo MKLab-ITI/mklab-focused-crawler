@@ -106,6 +106,7 @@ public class VisualIndexer {
 	public static StormTopology createTopology(XMLConfiguration config) {
 		
 		String redisHost = config.getString("redis.hostname", "xxx.xxx.xxx.xxx");
+		int redisPort = config.getInt("redis.port", 6379);
 		String redisMediaChannel = config.getString("redis.mediaItemsChannel", "media");
 		
 		String mongodbHostname = config.getString("mongodb.hostname", "xxx.xxx.xxx.xxx");
@@ -139,7 +140,7 @@ public class VisualIndexer {
 		IRichBolt mediaTextIndexer, clusterer;
 		
 		try {
-			miSpout = new RedisSpout(redisHost, redisMediaChannel, "id");	
+			miSpout = new RedisSpout(redisHost, redisPort, redisMediaChannel);	
 			miRanker = new MediaRankerBolt(redisMediaChannel);
 			
 			mediaCounter = new MediaCounterBolt(mongodbHostname, "Prototype");

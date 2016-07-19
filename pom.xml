@@ -140,6 +140,14 @@
 			<artifactId>storm-core</artifactId>
 			<version>1.0.1</version>
 		</dependency>
+		
+		<dependency>
+    		<groupId>org.apache.storm</groupId>
+    		<artifactId>storm-redis</artifactId>
+    		<version>1.0.1</version>
+    		<type>jar</type>
+		</dependency>
+
   	</dependencies>
 	
 	<repositories>

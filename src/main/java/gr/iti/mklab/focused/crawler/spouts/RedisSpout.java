@@ -2,27 +2,20 @@ package gr.iti.mklab.focused.crawler.spouts;
 
 import static org.apache.storm.utils.Utils.tuple;
 
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.log4j.Logger;
-
-import com.mongodb.DBObject;
-import com.mongodb.util.JSON;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.JedisPubSub;
-import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
+
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
 
@@ -31,34 +24,26 @@ public class RedisSpout extends BaseRichSpout {
 	private Logger logger;
 	
 	static final long serialVersionUID = 737015318988609460L;
-
-	private String channel;
 	
 	private SpoutOutputCollector _collector;
 	private final String host;
+	private final int port;
+	
+	private final String pattern;
 	
 	private LinkedBlockingQueue<String> queue;
 	private JedisPool pool;
 
-	private String uniqueField = null;
-
-	public RedisSpout(String host, String channel) {
+	public RedisSpout(String host, int port, String pattern) {
 		this.host = host;
-		this.channel = channel;
-	}
-	
-	public RedisSpout(String host, String channel, String uniqueField) {
-		this(host, channel);
-		this.uniqueField = uniqueField;
+		this.port = port;
+		this.pattern = pattern;
 	}
 
 	class ListenerThread extends Thread {
 		
 		private LinkedBlockingQueue<String> queue;
 		private JedisPool pool;
-		
-		private int totalMessages = 0;
-		private Set<String> ids = new HashSet<String>();
 			
 		public ListenerThread(LinkedBlockingQueue<String> queue, JedisPool pool) {
 			this.queue = queue;
@@ -71,32 +56,13 @@ public class RedisSpout extends BaseRichSpout {
 
 				@Override
 				public void onMessage(String channel, String message) {
-					totalMessages++;
-				
-					DBObject obj = (DBObject) JSON.parse(message);
-					
-					if(uniqueField != null) {
-						// Emit only unique messages based on uniqueField
-						String id = (String) obj.get(uniqueField);
-						if(!ids.contains(id)) {
-							queue.offer(message);
-							ids.add(id);
-							if(ids.size() % 2000 == 0) {
-								logger.info(totalMessages + " messages received in total from " + channel + ". "  
-									+ ids.size() + " unique. " 
-									+ queue.size() + " in redis spout queue.");
-							}
-						}
-					}
-					else {
-						// Emit all messages
-						queue.offer(message);
-					}
-					
+					queue.offer(message);
 				}
 
 				@Override
-				public void onPMessage(String pattern, String channel, String message) { }
+				public void onPMessage(String pattern, String channel, String message) { 
+					queue.offer(message);
+				}
 
 				@Override
 				public void onPSubscribe(String channel, int subscribedChannels) { }
@@ -114,9 +80,8 @@ public class RedisSpout extends BaseRichSpout {
 
 			Jedis jedis = pool.getResource();
 			try {
-				logger.info("Subscribe on " + channel);
-				
-				jedis.subscribe(listener, channel);
+				logger.info("Subscribe on " + pattern);
+				jedis.psubscribe(listener, pattern);
 			} finally {
 				pool.returnResource(jedis);
 			}
@@ -129,11 +94,12 @@ public class RedisSpout extends BaseRichSpout {
 		
 		_collector = collector;
 		queue = new LinkedBlockingQueue<String>(10000);
-		pool = new JedisPool(new JedisPoolConfig(), host);
+		
+		JedisPoolConfig jedisConf = new JedisPoolConfig();
+		pool = new JedisPool(jedisConf, host, port);
 		
 		ListenerThread listener = new ListenerThread(queue, pool);
 		listener.start();
-
 		
 	}
 
@@ -159,29 +125,11 @@ public class RedisSpout extends BaseRichSpout {
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields(channel));
+		declarer.declare(new Fields(pattern));
 	}
 
 	public boolean isDistributed() {
 		return false;
 	}
-	
-	public static void main(String...args) {
-		
-		/* */
-		RedisSpout spout = new RedisSpout("xxx.xxx.xxx.xxx", "media", "url");
-		
-		TopologyBuilder builder = new TopologyBuilder();
-		builder.setSpout("injector", spout, 1);
-		
-		Config conf = new Config();
-        conf.setDebug(false);
-
-		System.out.println("Run topology in local mode");
-		LocalCluster cluster = new LocalCluster();
-		cluster.submitTopology("redis-spout-test", conf, builder.createTopology());
-		
-	}
-	
 	
 }
