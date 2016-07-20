@@ -4,8 +4,6 @@ import static org.apache.storm.utils.Utils.tuple;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,14 +12,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.entity.ContentType;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -53,13 +44,12 @@ public class ArticleExtractionBolt extends BaseRichBolt {
 
 	private static final long serialVersionUID = -2548434425109192911L;
 	
-	public static String MEDIA_STREAM = "media";
-	public static String WEBPAGE_STREAM = "webpage";
+	public static String MEDIA_STREAM = "mediaitems";
+	public static String WEBPAGE_STREAM = "webpages";
 	
 	private Logger _logger;
 	
 	private OutputCollector _collector;
-	private HttpClient _httpclient;
 	
 	private BoilerpipeExtractor _extractor, _articleExtractor;
 	private ImageExtractor _imageExtractor;
@@ -69,31 +59,20 @@ public class ArticleExtractionBolt extends BaseRichBolt {
 	private int minArea = 200 * 200;
 	private int maxUrlLength = 500;
 	
-	private PoolingHttpClientConnectionManager _cm;
-	
-	private int numOfFetchers = 24;
-	
-	private BlockingQueue<WebPage> _queue;
+	private BlockingQueue<Pair<WebPage, byte[]>> _queue;
 	private BlockingQueue<Object> _tupleQueue;
-
-	private RequestConfig _requestConfig;
 
 	private long receivedTuples = 0;
 	
 	private Thread _emitter;
-	private List<Thread> _fetchers;
 	
 	public ArticleExtractionBolt() {
 
 	}
 	
-	public ArticleExtractionBolt(int numOfFetchers) {
-		this.numOfFetchers = numOfFetchers;
-	}
-	
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-    	declarer.declareStream(MEDIA_STREAM, new Fields("MediaItem"));
-    	declarer.declareStream(WEBPAGE_STREAM, new Fields("WebPage"));
+    	declarer.declareStream(MEDIA_STREAM, new Fields("mediaitems"));
+    	declarer.declareStream(WEBPAGE_STREAM, new Fields("webpages"));
     }
 
 	public void prepare(@SuppressWarnings("rawtypes") Map conf, TopologyContext context, 
@@ -103,22 +82,8 @@ public class ArticleExtractionBolt extends BaseRichBolt {
 		
 		_collector = collector;
 		
-		_queue = new LinkedBlockingQueue<WebPage>();
+		_queue = new LinkedBlockingQueue<Pair<WebPage, byte[]>>();
 		_tupleQueue =  new LinkedBlockingQueue<Object>();
-		
-		_cm = new PoolingHttpClientConnectionManager();
-		_cm.setMaxTotal(numOfFetchers);
-		_cm.setDefaultMaxPerRoute(10);
-
-		_httpclient = HttpClients.custom()
-		        .setConnectionManager(_cm)
-		        .build();
-		
-		// Set timeout parameters for Http requests
-		_requestConfig = RequestConfig.custom()
-		        .setSocketTimeout(30000)
-		        .setConnectTimeout(30000)
-		        .build();
 
 		_articleExtractor = CommonExtractors.ARTICLE_EXTRACTOR;
 	    _extractor = CommonExtractors.ARTICLE_EXTRACTOR;
@@ -130,24 +95,21 @@ public class ArticleExtractionBolt extends BaseRichBolt {
 	    // Quality estimator of the article extraction process
 	    _estimator = SimpleEstimator.INSTANCE;	
 	    
+	    Thread extractorThread = new Thread(new ArticleExtractor(_queue));
+	    extractorThread.start();
+    	
 	    _emitter = new Thread(new Emitter(_collector, _tupleQueue));
 	    _emitter.start();
-	    
-	    _fetchers = new ArrayList<Thread>(numOfFetchers);
-	    for(int i=0;i<numOfFetchers; i++) {
-	    	Thread fetcher = new Thread(new HttpFetcher(_queue));
-	    	fetcher.start();
-	    	
-	    	_fetchers.add(fetcher);
-	    }
+	   
 	}
 
 	public void execute(Tuple tuple) {
 		receivedTuples++;
-		WebPage webPage = (WebPage) tuple.getValueByField("webPage");
+		WebPage webPage = (WebPage) tuple.getValueByField("webpages");
+		byte[] content = tuple.getBinaryByField("content");
 		try {
-			if(webPage != null) {
-				_queue.put(webPage);
+			if(webPage != null && content != null) {
+				_queue.put(Pair.of(webPage, content));
 			}
 		} catch (InterruptedException e) {
 			_logger.error(e);
@@ -186,100 +148,46 @@ public class ArticleExtractionBolt extends BaseRichBolt {
 				}
 				
 				if((mediaTuples%100==0 || webPagesTuples%100==0) && (mediaTuples!=0 || webPagesTuples!=0)) {
-					_logger.info(receivedTuples + " tuples received, " + mediaTuples + " media tuples emmited, " + 
-							webPagesTuples + " web page tuples emmited");
-					_logger.info(getWorkingFetchers() + " fetchers out of " + numOfFetchers + " are working.");
+					_logger.info(receivedTuples + " tuples received, " + mediaTuples + " media tuples emmited, " + webPagesTuples + " web page tuples emmited");
 				}
 			}
 		}
 	}
 	
-	private int getWorkingFetchers() {
-		int working = 0;
-		for(Thread fetcher : _fetchers) {
-			if(fetcher.isAlive())
-				working++;
-		}
-		return working;
-	}
-	
-	private class HttpFetcher implements Runnable {
+	private class ArticleExtractor implements Runnable {
 
-		private BlockingQueue<WebPage> queue;
+		private BlockingQueue<Pair<WebPage, byte[]>> queue;
 		
-		public HttpFetcher(BlockingQueue<WebPage> _queue) {
+		public ArticleExtractor(BlockingQueue<Pair<WebPage, byte[]>> _queue) {
 			this.queue = _queue;
 		}
 		
 		public void run() {
 			while(true) {
 				
-				WebPage webPage = null;
+				Pair<WebPage, byte[]> tuple = null;
 				try {
-					webPage = queue.take();
+					tuple = queue.take();
 				} catch (Exception e) {
 					_logger.error(e);
 					continue;
 				}
 				
-				if(webPage == null) {
+				if(tuple == null) {
 					continue;
 				}
 				
-				String expandedUrl = webPage.getExpandedUrl();
-				if(expandedUrl==null || expandedUrl.length()>300) {
-					//_tupleQueue.add(webPage);
-					continue;
-				}
-				
-				HttpGet httpget = null;
-				try {
-					
-					URI uri = new URI(expandedUrl
-							.replaceAll(" ", "%20")
-							.replaceAll("\\|", "%7C")
-							);
-					
-					httpget = new HttpGet(uri);
-					httpget.setConfig(_requestConfig);
-					HttpResponse response = _httpclient.execute(httpget);
-					
-					HttpEntity entity = response.getEntity();
-					ContentType contentType = ContentType.get(entity);
-	
-					if(!contentType.getMimeType().equals(ContentType.TEXT_HTML.getMimeType())) {
-						_logger.error("URL: " + webPage.getExpandedUrl() + 
-								"   Not supported mime type: " + contentType.getMimeType());
-						
-						//_tupleQueue.add(webPage);
-						
-						continue;
+				WebPage webPage = tuple.getKey();
+				byte[] content = tuple.getRight();
+
+				List<MediaItem> mediaItems = new ArrayList<MediaItem>();
+				boolean parsed = parseWebPage(webPage, content, mediaItems);
+				if(parsed) { 
+					_tupleQueue.add(webPage);
+					for(MediaItem mItem : mediaItems) {
+						_tupleQueue.add(mItem);
 					}
-					
-					InputStream input = entity.getContent();
-					byte[] content = IOUtils.toByteArray(input);
-					
-					List<MediaItem> mediaItems = new ArrayList<MediaItem>();
-					boolean parsed = parseWebPage(webPage, content, mediaItems);
-					if(parsed) { 
-						_tupleQueue.add(webPage);
-						for(MediaItem mItem : mediaItems) {
-							_tupleQueue.add(mItem);
-						}
-					}
-					else {
-						_logger.error("Parsing of " + expandedUrl + " failed.");
-						//_tupleQueue.add(webPage);
-					}
-				} catch (Exception e) {
-					_logger.error("for " + expandedUrl, e);
-					//_tupleQueue.add(webPage);
 				}
-				finally {
-					if(httpget != null)
-						httpget.abort();
-				}
-				
 			}
 		}
 	}

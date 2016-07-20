@@ -34,10 +34,13 @@ public class RedisSpout extends BaseRichSpout {
 	private LinkedBlockingQueue<String> queue;
 	private JedisPool pool;
 
-	public RedisSpout(String host, int port, String pattern) {
+	private String outputField;
+
+	public RedisSpout(String host, int port, String pattern, String outputField) {
 		this.host = host;
 		this.port = port;
 		this.pattern = pattern;
+		this.outputField = outputField;
 	}
 
 	class ListenerThread extends Thread {
@@ -108,11 +111,11 @@ public class RedisSpout extends BaseRichSpout {
 	}
 
 	public void nextTuple() {
-		String ret = queue.poll();
-        if(ret == null) {
+		String msg = queue.poll();
+        if(msg == null) {
             Utils.sleep(50);
         } else {
-            _collector.emit(tuple(ret));            
+            _collector.emit(tuple(msg));            
         }
 	}
 
@@ -125,7 +128,7 @@ public class RedisSpout extends BaseRichSpout {
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields(pattern));
+		declarer.declare(new Fields(outputField));
 	}
 
 	public boolean isDistributed() {

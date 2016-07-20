@@ -26,7 +26,7 @@ public class CrawlDecider {
 		
 	}
 	
-	private String getStatus(String id) {
+	public String getStatus(String id) {
 		String value = jedis.hget(id, "status");
 		return value;
 	}
@@ -34,14 +34,6 @@ public class CrawlDecider {
 	public void deleteStatus(String id) {
 		jedis.del(id);
 	}
-	
-	public static void main(String[] args) {
-		CrawlDecider decider = new CrawlDecider("160.40.50.207");
-		//decider.deleteStatus("1");
-		
-		//decider.setStatus("1", "312");
-		
-		System.out.println(decider.getStatus("1"));
-	}
+
 	
 }

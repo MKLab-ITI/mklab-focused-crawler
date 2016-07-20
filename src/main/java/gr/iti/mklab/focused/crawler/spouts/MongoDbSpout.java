@@ -8,10 +8,6 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
@@ -154,10 +150,11 @@ public class MongoDbSpout extends BaseRichSpout {
 		MongoDatabase db = client.getDatabase(dbName);
 		MongoCollection<Document> collection = db.getCollection(collectionName);
 		
-		DBObject q = new BasicDBObject("status", "injected");
-		DBObject o = new BasicDBObject("$set", new BasicDBObject("status", "new"));
-		//collection.update(q, o, false, true);
+		BasicDBObject q = new BasicDBObject("status", "injected");
+		BasicDBObject o = new BasicDBObject("$set", new BasicDBObject("status", "new"));
+		collection.updateMany(q, o);
 		
+		client.close();
 	}
 	
 	

@@ -1,4 +1,4 @@
-package gr.iti.mklab.focused.crawler.bolts.webpages;
+package gr.iti.mklab.focused.crawler.bolts;
 
 import static org.apache.storm.utils.Utils.tuple;
 import gr.iti.mklab.framework.common.domain.JSONable;
@@ -14,7 +14,7 @@ import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 
-public class WebPageDeserializationBolt extends BaseRichBolt {
+public class DeserializationBolt<K> extends BaseRichBolt {
 
 	/**
 	 * 
@@ -26,24 +26,26 @@ public class WebPageDeserializationBolt extends BaseRichBolt {
 	private OutputCollector _collector;
 
 	private String inputField;
+	private Class<K> c;
 
-	public WebPageDeserializationBolt(String inputField) {
+	public DeserializationBolt(String inputField, Class<K> c) {
 		this.inputField = inputField;
-		JSONable.mapClass(WebPage.class);
+		this.c = c;
+		JSONable.mapClass(c);
 	}
 	
 	public void prepare(@SuppressWarnings("rawtypes") Map stormConf, TopologyContext context,
 			OutputCollector collector) {
 		this._collector = collector;	
-		_logger = Logger.getLogger(WebPageDeserializationBolt.class);
+		_logger = Logger.getLogger(DeserializationBolt.class);
 	}
 
 	public void execute(Tuple input) {
 		try {
 			String json = input.getStringByField(inputField);
-			WebPage webPage = WebPage.toObject(json, WebPage.class);
-			if(webPage != null) {
-				_collector.emit(tuple(webPage));
+			K object = WebPage.toObject(json, c);
+			if(object != null) {
+				_collector.emit(tuple(object));
 			}
 		} catch(Exception e) {
 			e.printStackTrace();

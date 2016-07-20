@@ -6,9 +6,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.log4j.Logger;
 
@@ -32,26 +30,16 @@ public class URLExpansionBolt extends BaseRichBolt {
 	private Logger logger;
 	private OutputCollector _collector;
 	
-	private Set<String> socialMediaTargets = new HashSet<String>();
 	private String inputField;
 	
 	public URLExpansionBolt(String inputField) throws Exception {
-		
-		this.inputField = inputField;
-		
-		socialMediaTargets.add("vimeo.com");
-		socialMediaTargets.add("instagram.com");
-		socialMediaTargets.add("www.youtube.com");
-		socialMediaTargets.add("twitpic.com");
-		socialMediaTargets.add("dailymotion.com");
-		socialMediaTargets.add("www.facebook.com");
+		this.inputField = inputField;	
 	}
 	
 	public void prepare(@SuppressWarnings("rawtypes") Map stormConf, TopologyContext context,
 			OutputCollector collector) {
 		
-		logger = Logger.getLogger(URLExpansionBolt.class);
-		
+		this.logger = Logger.getLogger(URLExpansionBolt.class);	
 		this._collector = collector;
 	}
 
@@ -70,15 +58,8 @@ public class URLExpansionBolt extends BaseRichBolt {
 						webPage.setExpandedUrl(expandedUrl);
 						webPage.setDomain(domain);
 						
-						logger.info(url + " => " + expandedUrl + "\t domain: " + domain);
-						
 						synchronized(_collector) {
-							if(socialMediaTargets.contains(domain)) {
-								_collector.emit("media", tuple(webPage));
-							}
-							else {
-								_collector.emit("webpage", tuple(webPage));
-							}
+							_collector.emit(tuple(webPage));
 						}
 					}
 					catch(Exception e) {
@@ -103,8 +84,7 @@ public class URLExpansionBolt extends BaseRichBolt {
 	}
 	
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declareStream("media", new Fields("webPage"));
-		declarer.declareStream("webpage", new Fields("webPage"));
+		declarer.declare(new Fields(inputField));
 	}
 
 	public static String expand(String shortUrl) throws IOException {

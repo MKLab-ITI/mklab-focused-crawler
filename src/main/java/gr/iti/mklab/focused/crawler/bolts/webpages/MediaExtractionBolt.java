@@ -1,10 +1,18 @@
 package gr.iti.mklab.focused.crawler.bolts.webpages;
 
 import static org.apache.storm.utils.Utils.tuple;
+import gr.iti.mklab.framework.Credentials;
 import gr.iti.mklab.framework.common.domain.MediaItem;
 import gr.iti.mklab.framework.common.domain.StreamUser;
 import gr.iti.mklab.framework.common.domain.WebPage;
 import gr.iti.mklab.framework.retrievers.Retriever;
+import gr.iti.mklab.framework.retrievers.impl.DailyMotionRetriever;
+import gr.iti.mklab.framework.retrievers.impl.FacebookRetriever;
+import gr.iti.mklab.framework.retrievers.impl.FlickrRetriever;
+import gr.iti.mklab.framework.retrievers.impl.InstagramRetriever;
+import gr.iti.mklab.framework.retrievers.impl.TwitpicRetriever;
+import gr.iti.mklab.framework.retrievers.impl.VimeoRetriever;
+import gr.iti.mklab.framework.retrievers.impl.YoutubeRetriever;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,7 +20,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
-
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -26,10 +33,7 @@ public class MediaExtractionBolt extends BaseRichBolt {
 	 * 
 	 */
 	private static final long serialVersionUID = -2548434425109192911L;
-	
-	private static final String SUCCESS = "success";
-	private static final String FAILED = "failed";
-	
+
 	private static String MEDIA_STREAM = "media";
 	private static String WEBPAGE_STREAM = "webpage";
 	
@@ -57,23 +61,39 @@ public class MediaExtractionBolt extends BaseRichBolt {
 		this._collector = collector;  		
 		logger = Logger.getLogger(MediaExtractionBolt.class);
 		
-		/*
-		retrievers.put("instagram", new InstagramRetriever(instagramClientId));
+		Credentials instaCredentials = new Credentials();
+		instaCredentials.setClientId("");
+		instaCredentials.setKey("");
+		retrievers.put("instagram", new InstagramRetriever(instaCredentials));
+		
 		Credentials yrCredentials = new Credentials();
-		yrCredentials.setClientId(youtubeClientId);
-		yrCredentials.setKey(youtubeDevKey);
-		retrievers.put("youtube", new YoutubeRetriever(yrCredentials, 10, 60000L));
-		retrievers.put("vimeo", new VimeoRetriever());
-		retrievers.put("twitpic", new TwitpicRetriever());
-		retrievers.put("dailymotion", new DailyMotionRetriever());
+		yrCredentials.setClientId("");
+		yrCredentials.setKey("");
+		retrievers.put("youtube", new YoutubeRetriever(yrCredentials));
+		
+		Credentials vimeoCredentials = new Credentials();
+		vimeoCredentials.setClientId("");
+		vimeoCredentials.setKey("");
+		retrievers.put("vimeo", new VimeoRetriever(vimeoCredentials));
+		
+		Credentials twpCredentials = new Credentials();
+		twpCredentials.setClientId("");
+		twpCredentials.setKey("");
+		retrievers.put("twitpic", new TwitpicRetriever(twpCredentials));
+		
+		Credentials dmCredentials = new Credentials();
+		dmCredentials.setClientId("");
+		dmCredentials.setKey("");
+		retrievers.put("dailymotion", new DailyMotionRetriever(dmCredentials));
+		
 		Credentials fbCredentials = new Credentials();
-		fbCredentials.setAccessToken(facebookToken);
-		retrievers.put("facebook", new FacebookRetriever(fbCredentials, 100, 600000L));
+		fbCredentials.setAccessToken("");
+		retrievers.put("facebook", new FacebookRetriever(fbCredentials));
+		
 		Credentials flickrCredentials = new Credentials();
-		flickrCredentials.setKey(flickrKey);
-		flickrCredentials.setSecret(flickrSecret);
-		retrievers.put("flickr", new FlickrRetriever(flickrCredentials, 100, 600000L));
-		*/
+		flickrCredentials.setKey("");
+		flickrCredentials.setSecret("");
+		retrievers.put("flickr", new FlickrRetriever(flickrCredentials));
 		
 	}
 
@@ -98,13 +118,11 @@ public class MediaExtractionBolt extends BaseRichBolt {
 			
 			synchronized(_collector) {
 				if(mediaItem != null) { 
-					//webPage.setStatus(SUCCESS);
 					_collector.emit(WEBPAGE_STREAM, tuple(webPage));
 					_collector.emit(MEDIA_STREAM, tuple(mediaItem));
 				}
 				else {
 					logger.error(webPage.getExpandedUrl() + " failed due to null media item");
-					//webPage.setStatus(FAILED);
 					_collector.emit(WEBPAGE_STREAM, tuple(webPage));
 				}
 			}
@@ -112,7 +130,6 @@ public class MediaExtractionBolt extends BaseRichBolt {
 			logger.error(webPage.getExpandedUrl() + " failed due to exception");
 			logger.error(e);
 			synchronized(_collector) {
-				//webPage.setStatus(FAILED);
 				_collector.emit(WEBPAGE_STREAM, tuple(webPage));
 			}
 		}
@@ -157,7 +174,7 @@ public class MediaExtractionBolt extends BaseRichBolt {
 		}
 		else if((matcher = flickrPattern.matcher(url)).matches()) {
 			mediaId = matcher.group(2);
-			//retriever = retrievers.get("flickr");
+			retriever = retrievers.get("flickr");
 			source = "flickr";
 		}
 		else {

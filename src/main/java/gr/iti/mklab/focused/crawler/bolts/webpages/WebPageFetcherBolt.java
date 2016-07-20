@@ -12,7 +12,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -22,7 +21,6 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.log4j.Logger;
-
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -45,7 +43,7 @@ public class WebPageFetcherBolt extends BaseRichBolt {
 	private int numOfFetchers = 24;
 	
 	private BlockingQueue<WebPage> _queue;
-	private BlockingQueue<Pair<WebPage, byte[]>> _tupleQueue;
+	private BlockingQueue<List<Object>> _tupleQueue;
 
 	private RequestConfig _requestConfig;
 
@@ -53,20 +51,20 @@ public class WebPageFetcherBolt extends BaseRichBolt {
 	
 	private Thread _emitter;
 	private List<Thread> _fetchers;
-	
-	public WebPageFetcherBolt() {
 
+	private String inputField;
+	
+	public WebPageFetcherBolt(String inputField) {
+		this.inputField = inputField;
 	}
 	
-	public WebPageFetcherBolt(int numOfFetchers) {
+	public WebPageFetcherBolt(String inputField, int numOfFetchers) {
+		this.inputField = inputField;
 		this.numOfFetchers = numOfFetchers;
 	}
 	
-    public void declareOutputFields(OutputFieldsDeclarer declarer) {
-    	//declarer.declareStream(MEDIA_STREAM, new Fields("MediaItem", "ImageContent"));
-    	//declarer.declareStream(WEBPAGE_STREAM, new Fields("WebPage", "webPageContent"));
-    	
-    	declarer.declare(new Fields("WebPage", "Content"));
+    public void declareOutputFields(OutputFieldsDeclarer declarer) {    	
+    	declarer.declare(new Fields(inputField, "content"));
     }
 
 	public void prepare(@SuppressWarnings("rawtypes") Map conf, TopologyContext context, 
@@ -77,7 +75,7 @@ public class WebPageFetcherBolt extends BaseRichBolt {
 		_collector = collector;
 		
 		_queue = new LinkedBlockingQueue<WebPage>();
-		_tupleQueue =  new LinkedBlockingQueue<Pair<WebPage, byte[]>>();
+		_tupleQueue =  new LinkedBlockingQueue<List<Object>>();
 		
 		_cm = new PoolingHttpClientConnectionManager();
 		_cm.setMaxTotal(numOfFetchers);
@@ -107,7 +105,7 @@ public class WebPageFetcherBolt extends BaseRichBolt {
 
 	public void execute(Tuple tuple) {
 		receivedTuples++;
-		WebPage webPage = (WebPage) tuple.getValueByField("webPage");
+		WebPage webPage = (WebPage) tuple.getValueByField(inputField);
 		try {
 			if(webPage != null) {
 				_queue.put(webPage);
@@ -120,30 +118,21 @@ public class WebPageFetcherBolt extends BaseRichBolt {
 	private class Emitter implements Runnable {
 
 		private OutputCollector _collector;
-		private BlockingQueue<Pair<WebPage, byte[]>> _tupleQueue;
+		private BlockingQueue<List<Object>> _tupleQueue;
 		
 		private int mediaTuples = 0, webPagesTuples = 0;
 		
-		public Emitter(OutputCollector collector, BlockingQueue<Pair<WebPage, byte[]>> tupleQueue) {
+		public Emitter(OutputCollector collector, BlockingQueue<List<Object>> tupleQueue) {
 			_collector = collector;
 			_tupleQueue = tupleQueue;
 		}
 		
 		public void run() {
 			while(true) {
-				Pair<?, ?> obj = _tupleQueue.poll();
-				if(obj != null) {
+				List<Object> tuple = _tupleQueue.poll();
+				if(tuple != null) {
 					synchronized(_collector) {
-						_collector.emit(tuple(obj.getLeft(), obj.getRight()));
-						
-						//if(MediaItem.class.isInstance(obj)) {
-						//	mediaTuples++;
-						//	_collector.emit(MEDIA_STREAM, tuple(obj));
-						//}
-						//else if(WebPage.class.isInstance(obj)) {
-						//	webPagesTuples++;
-						//	_collector.emit(WEBPAGE_STREAM, tuple(obj));
-						//}
+						_collector.emit(tuple);
 					}
 				}
 				else {
@@ -162,8 +151,9 @@ public class WebPageFetcherBolt extends BaseRichBolt {
 	private int getWorkingFetchers() {
 		int working = 0;
 		for(Thread fetcher : _fetchers) {
-			if(fetcher.isAlive())
+			if(fetcher.isAlive()) {
 				working++;
+			}
 		}
 		return working;
 	}
@@ -192,18 +182,15 @@ public class WebPageFetcherBolt extends BaseRichBolt {
 				}
 				
 				String expandedUrl = webPage.getExpandedUrl();
-				if(expandedUrl==null || expandedUrl.length()>300) {
-					_tupleQueue.add(Pair.of(webPage, new byte[0]));
+				if(expandedUrl == null || expandedUrl.length() > 300) {
+					_tupleQueue.add(tuple(webPage, new byte[0]));
 					continue;
 				}
 				
 				HttpGet httpget = null;
 				try {
 					
-					URI uri = new URI(expandedUrl
-							.replaceAll(" ", "%20")
-							.replaceAll("\\|", "%7C")
-							);
+					URI uri = new URI(expandedUrl.replaceAll(" ", "%20").replaceAll("\\|", "%7C"));
 					
 					httpget = new HttpGet(uri);
 					httpget.setConfig(_requestConfig);
@@ -213,10 +200,8 @@ public class WebPageFetcherBolt extends BaseRichBolt {
 					ContentType contentType = ContentType.get(entity);
 	
 					if(!contentType.getMimeType().equals(ContentType.TEXT_HTML.getMimeType())) {
-						_logger.error("URL: " + webPage.getExpandedUrl() + 
-								"   Not supported mime type: " + contentType.getMimeType());
-						
-						_tupleQueue.add(Pair.of(webPage, new byte[0]));
+						_logger.error("URL: " + webPage.getExpandedUrl() + "   Not supported mime type: " + contentType.getMimeType());
+						_tupleQueue.add(tuple(webPage, new byte[0]));
 						
 						continue;
 					}
@@ -224,15 +209,18 @@ public class WebPageFetcherBolt extends BaseRichBolt {
 					InputStream input = entity.getContent();
 					byte[] content = IOUtils.toByteArray(input);
 					
-					_tupleQueue.add(Pair.of(webPage, content));
+					List<Object> tuple = tuple(webPage, content);
+					_logger.info("URL: " + webPage.getExpandedUrl() + " Content: " + content.length + " bytes");
+					_tupleQueue.add(tuple);
 					
 				} catch (Exception e) {
 					_logger.error("for " + expandedUrl, e);
-					_tupleQueue.add(Pair.of(webPage, new byte[0]));
+					_tupleQueue.add(tuple(webPage, new byte[0]));
 				}
 				finally {
-					if(httpget != null)
+					if(httpget != null) {
 						httpget.abort();
+					}
 				}
 				
 			}

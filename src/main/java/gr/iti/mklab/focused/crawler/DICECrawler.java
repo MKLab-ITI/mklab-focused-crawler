@@ -16,19 +16,20 @@ import org.apache.storm.topology.IRichBolt;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.topology.base.BaseRichSpout;
 
+import gr.iti.mklab.focused.crawler.bolts.DeserializationBolt;
 import gr.iti.mklab.focused.crawler.bolts.media.MediaTextIndexerBolt;
-import gr.iti.mklab.focused.crawler.bolts.media.MediaUpdaterBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.ArticleExtractionBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.MediaExtractionBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.TextIndexerBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.URLExpansionBolt;
-import gr.iti.mklab.focused.crawler.bolts.webpages.WebPageDeserializationBolt;
-import gr.iti.mklab.focused.crawler.bolts.webpages.WebPagesUpdaterBolt;
+import gr.iti.mklab.focused.crawler.bolts.webpages.UrlCrawlDeciderBolt;
+import gr.iti.mklab.focused.crawler.bolts.webpages.WebPageFetcherBolt;
 import gr.iti.mklab.focused.crawler.spouts.RedisSpout;
+import gr.iti.mklab.framework.common.domain.WebPage;
 
 
-public class FocusedCrawler {
-	private static Logger logger = Logger.getLogger(FocusedCrawler.class);
+public class DICECrawler {
+	private static Logger logger = Logger.getLogger(DICECrawler.class);
 	
 	/**
 	 *	@author Manos Schinas - manosetro@iti.gr
@@ -51,7 +52,7 @@ public class FocusedCrawler {
 			if(args.length == 1)
 				config = new XMLConfiguration(args[0]);
 			else
-				config = new XMLConfiguration("./conf/focused.crawler.xml");
+				config = new XMLConfiguration("./conf/dice.crawler.xml");
 		}
 		catch(ConfigurationException ex) {
 			logger.error(ex);
@@ -67,7 +68,7 @@ public class FocusedCrawler {
 		}
 		
         // Run topology
-        String name = config.getString("topology.focusedCrawlerName", "FocusedCrawler");
+        String name = config.getString("topology.focusedCrawlerName", "DiceFocusedCrawler");
         boolean local = config.getBoolean("topology.local", true);
         
         Config conf = new Config();
@@ -100,14 +101,10 @@ public class FocusedCrawler {
 	
 	public static StormTopology createTopology(XMLConfiguration config) {
 	
-		String redisHost = config.getString("redis.hostname", "xxx.xxx.xxx.xxx");
+		String redisHost = config.getString("redis.hostname", "127.0.0.1");
 		int redisPort = config.getInt("redis.port", 6379);
-		String webPagesChannel = config.getString("redis.webPagesChannel", "webpages");
 		
-		String mongodbHostname = config.getString("mongodb.hostname", "xxx.xxx.xxx.xxx");
-		String mediaItemsDB = config.getString("mongodb.mediaItemsDB", "Prototype");
-		String streamUsersDB = config.getString("mongodb.streamUsersDB", "Prototype");
-		String webPagesDB = config.getString("mongodb.webPagesDB", "Prototype");
+		String webPagesChannel = config.getString("redis.webPagesChannel", "webpages");
 		
 		String textIndexHostname = config.getString("textindex.hostname", "xxx.xxx.xxx.xxx:8080/solr");
 		String textIndexCollection = config.getString("textindex.collections.webpages", "WebPages");
@@ -116,20 +113,19 @@ public class FocusedCrawler {
 		String mediaTextIndexService = textIndexHostname + "/" + mediaIndexCollection;
 		
 		BaseRichSpout wpSpout;
-		IRichBolt wpDeserializer, mediaUpdater, urlExpander, mediaTextIndexer;
-		IRichBolt articleExtraction, mediaExtraction, webPageUpdater, textIndexer;
+		IRichBolt wpDeserializer, urlExpander, urlCrawlDeciderBolt, fetcher, articleExtraction, mediaExtraction;
+		IRichBolt textIndexer, mediaTextIndexer;
 		
 		try {
-			wpSpout = new RedisSpout(redisHost, redisPort, webPagesChannel);
-			wpDeserializer = new WebPageDeserializationBolt(webPagesChannel);
-			urlExpander = new URLExpansionBolt(webPagesChannel);
-			
-			articleExtraction = new ArticleExtractionBolt(24);
+			// initialize bolts & spouts
+			wpSpout = new RedisSpout(redisHost, redisPort, webPagesChannel, "webpages");
+			wpDeserializer = new DeserializationBolt<WebPage>("webpages", WebPage.class);
+			urlExpander = new URLExpansionBolt("webpages");
+			urlCrawlDeciderBolt = new UrlCrawlDeciderBolt("webpages", redisHost);
+			fetcher = new WebPageFetcherBolt("webpages");
+			articleExtraction = new ArticleExtractionBolt();
 			mediaExtraction = new MediaExtractionBolt();
-			webPageUpdater = new WebPagesUpdaterBolt(mongodbHostname, webPagesDB);
 			textIndexer = new TextIndexerBolt(textIndexService);
-
-			mediaUpdater = new MediaUpdaterBolt(mongodbHostname, mediaItemsDB, streamUsersDB);
 			mediaTextIndexer = new MediaTextIndexerBolt(mediaTextIndexService);
 		} catch (Exception e) {
 			logger.error(e);
@@ -142,29 +138,21 @@ public class FocusedCrawler {
 				
 		builder.setBolt("WpDeserializer", wpDeserializer, 4).shuffleGrouping("wpSpout");
 		builder.setBolt("expander", urlExpander, 8).shuffleGrouping("WpDeserializer");
-				
-				
-		builder.setBolt("articleExtraction", articleExtraction, 1)
-			.shuffleGrouping("expander", "webpage");
-		builder.setBolt("mediaExtraction", mediaExtraction, 1)
-			.shuffleGrouping("expander", "media");
-				
-		builder.setBolt("webPageUpdater", webPageUpdater, 4)
-			.shuffleGrouping("articleExtraction", "webpage")
-			.shuffleGrouping("mediaExtraction", "webpage");
-				
-		builder.setBolt("textIndexer", textIndexer, 1)
-			.shuffleGrouping("articleExtraction", "webpage");
-				
-		builder.setBolt("mediaupdater", mediaUpdater, 1)
-			.shuffleGrouping("articleExtraction", "media")
-			.shuffleGrouping("mediaExtraction", "media");
+		builder.setBolt("crawlDecider", urlCrawlDeciderBolt, 4).shuffleGrouping("expander");
 		
+		builder.setBolt("fetcher", fetcher, 1).shuffleGrouping("crawlDecider", "webpages");
+		builder.setBolt("articleExtraction", articleExtraction, 1).shuffleGrouping("fetcher");
+		
+		builder.setBolt("mediaExtraction", mediaExtraction, 1).shuffleGrouping("crawlDecider", "media");
+				
+		builder.setBolt("textIndexer", textIndexer, 1).shuffleGrouping("articleExtraction", "webpages");
+
 		builder.setBolt("mediatextindexer", mediaTextIndexer, 1)
-			.shuffleGrouping("articleExtraction", "media")
-			.shuffleGrouping("mediaExtraction", "media");
+			.shuffleGrouping("articleExtraction", "mediaitems")
+			.shuffleGrouping("mediaExtraction", "mediaitems");
 		
 		StormTopology topology = builder.createTopology();
 		return topology;
 	}
+	
 }
