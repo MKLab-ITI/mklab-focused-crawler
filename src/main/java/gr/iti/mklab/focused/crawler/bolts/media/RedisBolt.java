@@ -41,6 +41,7 @@ public class RedisBolt extends BaseRichBolt {
 		
         publisherJedis = jedisPool.getResource();
         logger = Logger.getLogger(RedisBolt.class);
+        
 	}
 
 	public void execute(Tuple input) {

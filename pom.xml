@@ -174,65 +174,7 @@
                     <target>1.6</target>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        	<plugin>
-        		<groupId>org.apache.maven.plugins</groupId>
-          		<artifactId>maven-shade-plugin</artifactId>
-           		<version>1.7.1</version>
-          		<executions>
-          			<execution>
-               			<phase>package</phase>
-               			<goals>
-                   			<goal>shade</goal>
-               			</goals>
-               			<configuration>
-              				<source>1.6</source>
-          					<target>1.6</target>
-                  			<filters>
-                    			<filter>
-                          			<artifact>*:*</artifact>
-                          			<excludes>
-                             			<exclude>META-INF/*.SF</exclude>
-                                  		<exclude>META-INF/*.DSA</exclude>
-                                  		<exclude>META-INF/*.RSA</exclude>                                       
-                              		</excludes>
-                          		</filter>
-                      		</filters>
-                     		<transformers>
-                      			<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                           			<manifestEntries>
-                               			<Main-Class>eu.socialsensor.focused.crawler.Crawler</Main-Class>
-                                  		<Build-Number>123</Build-Number>
-                              		</manifestEntries>
-                          		</transformer>
-                     		</transformers>
-                		</configuration>
-             		</execution>
-          		</executions>
-      		</plugin>
+            
       		<plugin>
     			<artifactId>maven-assembly-plugin</artifactId>
     			<configuration>
@@ -241,7 +183,7 @@
       				</descriptorRefs>
       				<archive>
         				<manifest>
-          					<mainClass>com.path.to.main.Class</mainClass>
+          					<mainClass>gr.iti.mklab.focused.crawler.DICECrawler</mainClass>
         				</manifest>
       				</archive>
     			</configuration>

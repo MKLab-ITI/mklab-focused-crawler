@@ -17,9 +17,9 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.topology.base.BaseRichSpout;
 
 import gr.iti.mklab.focused.crawler.bolts.DeserializationBolt;
+import gr.iti.mklab.focused.crawler.bolts.media.MediaExtractionBolt;
 import gr.iti.mklab.focused.crawler.bolts.media.MediaTextIndexerBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.ArticleExtractionBolt;
-import gr.iti.mklab.focused.crawler.bolts.webpages.MediaExtractionBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.TextIndexerBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.URLExpansionBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.UrlCrawlDeciderBolt;
@@ -127,6 +127,7 @@ public class DICECrawler {
 			mediaExtraction = new MediaExtractionBolt();
 			textIndexer = new TextIndexerBolt(textIndexService);
 			mediaTextIndexer = new MediaTextIndexerBolt(mediaTextIndexService);
+			
 		} catch (Exception e) {
 			logger.error(e);
 			return null;
