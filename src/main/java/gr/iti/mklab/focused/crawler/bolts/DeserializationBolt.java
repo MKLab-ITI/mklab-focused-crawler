@@ -36,7 +36,7 @@ public class DeserializationBolt<K> extends BaseRichBolt {
 	
 	public void prepare(@SuppressWarnings("rawtypes") Map stormConf, TopologyContext context,
 			OutputCollector collector) {
-		this._collector = collector;	
+		_collector = collector;	
 		_logger = Logger.getLogger(DeserializationBolt.class);
 	}
 
@@ -45,11 +45,12 @@ public class DeserializationBolt<K> extends BaseRichBolt {
 			String json = input.getStringByField(inputField);
 			K object = WebPage.toObject(json, c);
 			if(object != null) {
-				_collector.emit(tuple(object));
+				_collector.emit(input, tuple(object));
+				_collector.ack(input);
 			}
 		} catch(Exception e) {
-			e.printStackTrace();
-			_logger.error("Exception: "+e.getMessage());
+			_collector.fail(input);
+			_logger.error("Exception: " + e.getMessage());
 		}
 	}
 

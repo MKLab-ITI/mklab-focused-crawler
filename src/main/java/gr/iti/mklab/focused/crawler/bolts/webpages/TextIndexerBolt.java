@@ -23,12 +23,14 @@ public class TextIndexerBolt extends BaseRichBolt {
 	 */
 	private static final long serialVersionUID = -7500656732029697927L;
 	
-	private Logger logger;
+	private Logger _logger;
 	
 	private String _indexService;
 	private SolrWebPageHandler _solrWebPageHandler = null;
 	
-	private ArrayBlockingQueue<WebPage> _queue;
+	private ArrayBlockingQueue<Tuple> _queue;
+
+	private OutputCollector _collector;
 	
 	public TextIndexerBolt(String indexService) {
 		this._indexService = indexService;
@@ -39,27 +41,30 @@ public class TextIndexerBolt extends BaseRichBolt {
     }
 
 	public void prepare(@SuppressWarnings("rawtypes") Map conf, TopologyContext context, OutputCollector collector) {
-		logger = Logger.getLogger(TextIndexerBolt.class);
+		_logger = Logger.getLogger(TextIndexerBolt.class);
 		
-		_queue = new ArrayBlockingQueue<WebPage>(10000);
+		_queue = new ArrayBlockingQueue<Tuple>(10000);
 		
-		logger.info("Connect to " + _indexService);
+		_collector = collector;
+		
+		_logger.info("Connect to " + _indexService);
 		_solrWebPageHandler = SolrWebPageHandler.getInstance(_indexService);
 		
 		Thread t = new Thread(new TextIndexer());
 		t.start();
 	}
 
-	public void execute(Tuple tuple) {
+	public void execute(Tuple input) {
 		try {
-			WebPage webPage = (WebPage) tuple.getValueByField("WebPage");
-			
-			if(webPage != null && _solrWebPageHandler != null) {
-				_queue.add(webPage);
+			if(_solrWebPageHandler != null) {
+				_queue.add(input);
+			}
+			else {
+				_collector.fail(input);
 			}
 		}
 		catch(Exception ex) {
-			logger.error(ex);
+			_logger.error(ex);
 		}
 	}
 
@@ -71,29 +76,36 @@ public class TextIndexerBolt extends BaseRichBolt {
 					// Just wait 10 seconds
 					Thread.sleep(10 * 1000);
 
-					List<WebPage> webPages = new ArrayList<WebPage>();
-					_queue.drainTo(webPages);
+					List<Tuple> tuples = new ArrayList<Tuple>();
+					_queue.drainTo(tuples);
 					
-					if(webPages.isEmpty()) {
-						logger.info("There are no web pages to index. Wait some more time.");
+					if(tuples.isEmpty()) {
+						_logger.info("There are no web pages to index. Wait some more time.");
 						continue;
 					}
 					
 					List<WebPageBean> beans = new ArrayList<WebPageBean>();
-					for(WebPage wp : webPages) {
-						beans.add(new WebPageBean(wp));
+					for(Tuple tuple : tuples) {
+						try {
+							WebPage webPage = (WebPage) tuple.getValueByField("WebPage");
+							beans.add(new WebPageBean(webPage));
+							_collector.ack(tuple);
+						}
+						catch(Exception e) {
+							_collector.fail(tuple);
+						}
+						
 					}
 					
 					boolean inserted = _solrWebPageHandler.insert(beans);
-					
 					if(inserted) {
-						logger.info(webPages.size() + " web pages indexed in Solr");
+						_logger.info(tuples.size() + " web pages indexed in Solr");
 					}
 					else {
-						logger.error("Indexing in Solr failed for some web pages");
+						_logger.error("Indexing in Solr failed for some web pages");
 					}
 				} catch (Exception e) {
-					logger.error(e);
+					_logger.error(e);
 					continue;
 				}
 			}

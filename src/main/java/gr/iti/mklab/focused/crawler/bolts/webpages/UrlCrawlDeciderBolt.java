@@ -25,7 +25,7 @@ public class UrlCrawlDeciderBolt extends BaseRichBolt {
 	 */
 	private static final long serialVersionUID = 1L;
 
-	private Logger logger;
+	private Logger _logger;
 	
 	
 	private OutputCollector _collector;
@@ -54,7 +54,7 @@ public class UrlCrawlDeciderBolt extends BaseRichBolt {
 			OutputCollector collector) {
 		
 		this._collector = collector;
-		this.logger = Logger.getLogger(UrlCrawlDeciderBolt.class);
+		this._logger = Logger.getLogger(UrlCrawlDeciderBolt.class);
 		
 		this.decider = new CrawlDecider(redisHost);
 	}
@@ -66,24 +66,32 @@ public class UrlCrawlDeciderBolt extends BaseRichBolt {
 				String domain = webPage.getDomain();
 				if(socialMediaTargets.contains(domain)) {
 					_collector.emit("mediaitems", tuple(webPage));
+					_collector.ack(input);
 				}
 				else {
 					String expUrl = webPage.getExpandedUrl();
 					String status = decider.getStatus(expUrl);
 					if(status == null) {
 						decider.setStatus(expUrl, "injected");
-						_collector.emit("webpages", tuple(webPage));
+						_collector.emit("webpages", input, tuple(webPage, webPage.getDomain()));
+						_collector.ack(input);
 					}
-					
+					else {
+						_collector.fail(input);
+					}
 				}
 			}
+			else {
+				_collector.fail(input);
+			}
 		} catch(Exception e) {
-				logger.error("Exception: " + e.getMessage());
+			_collector.fail(input);
+			_logger.error("Exception: " + e.getMessage());
 		}
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declareStream("webpages", new Fields("webpages"));
+		declarer.declareStream("webpages", new Fields("webpages", "domain"));
 		declarer.declareStream("mediaitems", new Fields("mediaitems"));
 	}
 

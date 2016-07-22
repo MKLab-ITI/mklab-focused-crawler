@@ -27,7 +27,6 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
-import org.apache.storm.utils.Utils;
 
 public class WebPageFetcherBolt extends BaseRichBolt {
 
@@ -42,14 +41,12 @@ public class WebPageFetcherBolt extends BaseRichBolt {
 	
 	private int numOfFetchers = 24;
 	
-	private BlockingQueue<WebPage> _queue;
-	private BlockingQueue<List<Object>> _tupleQueue;
+	private BlockingQueue<Tuple> _queue;
+	//private BlockingQueue<Pair<Tuple, List<Object>>> _tupleQueue;
 
 	private RequestConfig _requestConfig;
-
-	private long receivedTuples = 0;
 	
-	private Thread _emitter;
+	//private Thread _emitter;
 	private List<Thread> _fetchers;
 
 	private String inputField;
@@ -74,11 +71,11 @@ public class WebPageFetcherBolt extends BaseRichBolt {
 		
 		_collector = collector;
 		
-		_queue = new LinkedBlockingQueue<WebPage>();
-		_tupleQueue =  new LinkedBlockingQueue<List<Object>>();
+		_queue = new LinkedBlockingQueue<Tuple>();
+		//_tupleQueue =  new LinkedBlockingQueue<Pair<Tuple, List<Object>>>();
 		
 		_cm = new PoolingHttpClientConnectionManager();
-		_cm.setMaxTotal(numOfFetchers);
+		_cm.setMaxTotal(4*numOfFetchers);
 		_cm.setDefaultMaxPerRoute(10);
 
 		_httpclient = HttpClients.custom()
@@ -91,8 +88,8 @@ public class WebPageFetcherBolt extends BaseRichBolt {
 		        .setConnectTimeout(30000)
 		        .build();
 	    
-	    _emitter = new Thread(new Emitter(_collector, _tupleQueue));
-	    _emitter.start();
+	    //_emitter = new Thread(new Emitter(_collector, _tupleQueue));
+	    //_emitter.start();
 	    
 	    _fetchers = new ArrayList<Thread>(numOfFetchers);
 	    for(int i=0;i<numOfFetchers; i++) {
@@ -103,51 +100,42 @@ public class WebPageFetcherBolt extends BaseRichBolt {
 	    }
 	}
 
-	public void execute(Tuple tuple) {
-		receivedTuples++;
-		WebPage webPage = (WebPage) tuple.getValueByField(inputField);
+
+	public void execute(Tuple input) {
 		try {
-			if(webPage != null) {
-				_queue.put(webPage);
-			}
+			_queue.put(input);
 		} catch (InterruptedException e) {
+			_collector.fail(input);
 			_logger.error(e);
 		}
 	}   
 	
+	/*
 	private class Emitter implements Runnable {
 
 		private OutputCollector _collector;
-		private BlockingQueue<List<Object>> _tupleQueue;
-		
-		private int mediaTuples = 0, webPagesTuples = 0;
-		
-		public Emitter(OutputCollector collector, BlockingQueue<List<Object>> tupleQueue) {
+		private BlockingQueue<Pair<Tuple, List<Object>>> _tupleQueue;
+			
+		public Emitter(OutputCollector collector, BlockingQueue<Pair<Tuple, List<Object>>> tupleQueue) {
 			_collector = collector;
 			_tupleQueue = tupleQueue;
 		}
 		
 		public void run() {
 			while(true) {
-				List<Object> tuple = _tupleQueue.poll();
-				if(tuple != null) {
-					synchronized(_collector) {
-						_collector.emit(tuple);
-					}
-				}
-				else {
-					Utils.sleep(500);
+				Pair<Tuple, List<Object>> tuples = _tupleQueue.poll();
+				if(tuples != null) {
+					_collector.emit(tuples.getKey(), tuples.getValue());
+					_collector.ack(tuples.getKey());
 				}
 				
-				if((mediaTuples%100==0 || webPagesTuples%100==0) && (mediaTuples!=0 || webPagesTuples!=0)) {
-					_logger.info(receivedTuples + " tuples received, " + mediaTuples + " media tuples emmited, " + 
-							webPagesTuples + " web page tuples emmited");
-					_logger.info(getWorkingFetchers() + " fetchers out of " + numOfFetchers + " are working.");
+				if((receivedTuples%100==0)) {
+					_logger.info(receivedTuples + " tuples received. " + getWorkingFetchers() + " fetchers out of " + numOfFetchers + " are working.");
 				}
 			}
 		}
 	}
-	
+
 	private int getWorkingFetchers() {
 		int working = 0;
 		for(Thread fetcher : _fetchers) {
@@ -157,33 +145,50 @@ public class WebPageFetcherBolt extends BaseRichBolt {
 		}
 		return working;
 	}
+	*/
+	
 	
 	private class HttpFetcher implements Runnable {
 
-		private BlockingQueue<WebPage> queue;
+		private BlockingQueue<Tuple> queue;
 		
-		public HttpFetcher(BlockingQueue<WebPage> _queue) {
+		public HttpFetcher(BlockingQueue<Tuple> _queue) {
 			this.queue = _queue;
 		}
 		
 		public void run() {
 			while(true) {
 				
-				WebPage webPage = null;
+				Tuple input = null;
 				try {
-					webPage = queue.take();
-				} catch (Exception e) {
-					_logger.error(e);
+					input = queue.take();
+					if(input == null) {
+						continue;
+					}
+				}
+				catch(InterruptedException e) {
 					continue;
 				}
 				
-				if(webPage == null) {
+				WebPage webPage = null;
+				try {	
+					webPage = (WebPage) input.getValueByField(inputField);
+					if(webPage == null) {
+						_collector.fail(input);
+						continue;
+					}
+				} catch (Exception e) {
+					_logger.error(e);
+					_collector.fail(input);
 					continue;
 				}
 				
 				String expandedUrl = webPage.getExpandedUrl();
 				if(expandedUrl == null || expandedUrl.length() > 300) {
-					_tupleQueue.add(tuple(webPage, new byte[0]));
+					List<Object> outputTuple = tuple(webPage, new byte[0]);
+					//_tupleQueue.add(Pair.of(input, outputTuple));
+					_collector.emit(input, outputTuple);
+					_collector.ack(input);
 					continue;
 				}
 				
@@ -201,21 +206,30 @@ public class WebPageFetcherBolt extends BaseRichBolt {
 	
 					if(!contentType.getMimeType().equals(ContentType.TEXT_HTML.getMimeType())) {
 						_logger.error("URL: " + webPage.getExpandedUrl() + "   Not supported mime type: " + contentType.getMimeType());
-						_tupleQueue.add(tuple(webPage, new byte[0]));
+						
+						List<Object> outputTuple = tuple(webPage, new byte[0]);
+						//_tupleQueue.add(Pair.of(input, tuple(webPage, new byte[0])));
+						_collector.emit(input, outputTuple);
+						_collector.ack(input);
 						
 						continue;
 					}
 					
-					InputStream input = entity.getContent();
-					byte[] content = IOUtils.toByteArray(input);
+					InputStream contentInputStream = entity.getContent();
+					byte[] content = IOUtils.toByteArray(contentInputStream);
 					
-					List<Object> tuple = tuple(webPage, content);
 					_logger.info("URL: " + webPage.getExpandedUrl() + " Content: " + content.length + " bytes");
-					_tupleQueue.add(tuple);
+					List<Object> outputTuple = tuple(webPage, content);
+					//_tupleQueue.add(Pair.of(input, outputTuple));
+					_collector.emit(input, outputTuple);
+					_collector.ack(input);
 					
 				} catch (Exception e) {
 					_logger.error("for " + expandedUrl, e);
-					_tupleQueue.add(tuple(webPage, new byte[0]));
+					List<Object> outputTuple = tuple(webPage, new byte[0]);
+					//_tupleQueue.add(Pair.of(input, outputTuple));
+					_collector.emit(input, outputTuple);
+					_collector.ack(input);
 				}
 				finally {
 					if(httpget != null) {

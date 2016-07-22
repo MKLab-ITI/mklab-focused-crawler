@@ -15,6 +15,7 @@ import org.apache.storm.generated.StormTopology;
 import org.apache.storm.topology.IRichBolt;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.topology.base.BaseRichSpout;
+import org.apache.storm.tuple.Fields;
 
 import gr.iti.mklab.focused.crawler.bolts.DeserializationBolt;
 import gr.iti.mklab.focused.crawler.bolts.media.MediaExtractionBolt;
@@ -122,7 +123,7 @@ public class DICECrawler {
 			wpDeserializer = new DeserializationBolt<WebPage>("webpages", WebPage.class);
 			urlExpander = new URLExpansionBolt("webpages");
 			urlCrawlDeciderBolt = new UrlCrawlDeciderBolt("webpages", redisHost);
-			fetcher = new WebPageFetcherBolt("webpages");
+			fetcher = new WebPageFetcherBolt("webpages", 6);
 			articleExtraction = new ArticleExtractionBolt();
 			mediaExtraction = new MediaExtractionBolt();
 			textIndexer = new TextIndexerBolt(textIndexService);
@@ -135,14 +136,13 @@ public class DICECrawler {
 		
 		// Create topology 
 		TopologyBuilder builder = new TopologyBuilder();
-		builder.setSpout("wpSpout", wpSpout, 1);
-				
+		builder.setSpout("wpSpout", wpSpout);
 		builder.setBolt("WpDeserializer", wpDeserializer, 4).shuffleGrouping("wpSpout");
 		builder.setBolt("expander", urlExpander, 8).shuffleGrouping("WpDeserializer");
-		builder.setBolt("crawlDecider", urlCrawlDeciderBolt, 4).shuffleGrouping("expander");
+		builder.setBolt("crawlDecider", urlCrawlDeciderBolt, 4).fieldsGrouping("expander", new Fields("domain"));
 		
-		builder.setBolt("fetcher", fetcher, 1).shuffleGrouping("crawlDecider", "webpages");
-		builder.setBolt("articleExtraction", articleExtraction, 1).shuffleGrouping("fetcher");
+		builder.setBolt("fetcher", fetcher, 4).fieldsGrouping("crawlDecider", "webpages", new Fields("domain"));
+		builder.setBolt("articleExtraction", articleExtraction, 4).shuffleGrouping("fetcher");
 		
 		builder.setBolt("mediaExtraction", mediaExtraction, 1).shuffleGrouping("crawlDecider", "media");
 				

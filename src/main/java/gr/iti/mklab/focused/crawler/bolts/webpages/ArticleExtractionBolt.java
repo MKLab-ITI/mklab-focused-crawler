@@ -12,7 +12,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -20,7 +19,6 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
-import org.apache.storm.utils.Utils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -29,14 +27,14 @@ import org.xml.sax.InputSource;
 
 import de.l3s.boilerpipe.BoilerpipeExtractor;
 import de.l3s.boilerpipe.BoilerpipeProcessingException;
+import de.l3s.boilerpipe.document.Image;
 import de.l3s.boilerpipe.document.TextDocument;
 import de.l3s.boilerpipe.document.TextDocumentStatistics;
 import de.l3s.boilerpipe.estimators.SimpleEstimator;
 import de.l3s.boilerpipe.extractors.CommonExtractors;
 import de.l3s.boilerpipe.sax.BoilerpipeSAXInput;
-import gr.iti.mklab.focused.crawler.models.Article;
-import gr.iti.mklab.focused.crawler.utils.Image;
-import gr.iti.mklab.focused.crawler.utils.ImageExtractor;
+import de.l3s.boilerpipe.sax.ImageExtractor;
+import gr.iti.mklab.framework.common.domain.Article;
 import gr.iti.mklab.framework.common.domain.MediaItem;
 import gr.iti.mklab.framework.common.domain.WebPage;
 
@@ -59,12 +57,7 @@ public class ArticleExtractionBolt extends BaseRichBolt {
 	private int minArea = 200 * 200;
 	private int maxUrlLength = 500;
 	
-	private BlockingQueue<Pair<WebPage, byte[]>> _queue;
-	private BlockingQueue<Object> _tupleQueue;
-
-	private long receivedTuples = 0;
-	
-	private Thread _emitter;
+	private BlockingQueue<Tuple> _queue;
 	
 	public ArticleExtractionBolt() {
 
@@ -82,8 +75,7 @@ public class ArticleExtractionBolt extends BaseRichBolt {
 		
 		_collector = collector;
 		
-		_queue = new LinkedBlockingQueue<Pair<WebPage, byte[]>>();
-		_tupleQueue =  new LinkedBlockingQueue<Object>();
+		_queue = new LinkedBlockingQueue<Tuple>();
 
 		_articleExtractor = CommonExtractors.ARTICLE_EXTRACTOR;
 	    _extractor = CommonExtractors.ARTICLE_EXTRACTOR;
@@ -97,96 +89,59 @@ public class ArticleExtractionBolt extends BaseRichBolt {
 	    
 	    Thread extractorThread = new Thread(new ArticleExtractor(_queue));
 	    extractorThread.start();
-    	
-	    _emitter = new Thread(new Emitter(_collector, _tupleQueue));
-	    _emitter.start();
-	   
+	    
 	}
 
-	public void execute(Tuple tuple) {
-		receivedTuples++;
-		WebPage webPage = (WebPage) tuple.getValueByField("webpages");
-		byte[] content = tuple.getBinaryByField("content");
+	public void execute(Tuple input) {
 		try {
-			if(webPage != null && content != null) {
-				_queue.put(Pair.of(webPage, content));
-			}
+			_queue.put(input);
+			
 		} catch (InterruptedException e) {
 			_logger.error(e);
 		}
 	}   
 	
-	private class Emitter implements Runnable {
-
-		private OutputCollector _collector;
-		private BlockingQueue<Object> _tupleQueue;
-		
-		private int mediaTuples = 0, webPagesTuples = 0;
-		
-		public Emitter(OutputCollector collector, BlockingQueue<Object> tupleQueue) {
-			_collector = collector;
-			_tupleQueue = tupleQueue;
-		}
-		
-		public void run() {
-			while(true) {
-				Object obj = _tupleQueue.poll();
-				if(obj != null) {
-					synchronized(_collector) {
-						if(MediaItem.class.isInstance(obj)) {
-							mediaTuples++;
-							_collector.emit(MEDIA_STREAM, tuple(obj));
-						}
-						else if(WebPage.class.isInstance(obj)) {
-							webPagesTuples++;
-							_collector.emit(WEBPAGE_STREAM, tuple(obj));
-						}
-					}
-				}
-				else {
-					Utils.sleep(500);
-				}
-				
-				if((mediaTuples%100==0 || webPagesTuples%100==0) && (mediaTuples!=0 || webPagesTuples!=0)) {
-					_logger.info(receivedTuples + " tuples received, " + mediaTuples + " media tuples emmited, " + webPagesTuples + " web page tuples emmited");
-				}
-			}
-		}
-	}
-	
 	private class ArticleExtractor implements Runnable {
 
-		private BlockingQueue<Pair<WebPage, byte[]>> queue;
+		private BlockingQueue<Tuple> queue;
 		
-		public ArticleExtractor(BlockingQueue<Pair<WebPage, byte[]>> _queue) {
+		public ArticleExtractor(BlockingQueue<Tuple> _queue) {
 			this.queue = _queue;
 		}
 		
 		public void run() {
 			while(true) {
-				
-				Pair<WebPage, byte[]> tuple = null;
+				Tuple input = null;
 				try {
-					tuple = queue.take();
+					input  = queue.take();
+					if(input == null) {
+						continue;
+					}
+					
+					WebPage webPage = (WebPage) input.getValueByField("webpages");
+					byte[] content = input.getBinaryByField("content");
+					
+					if(webPage == null || content == null) {
+						_collector.fail(input);
+						continue;
+					}
+					
+					List<MediaItem> mediaItems = new ArrayList<MediaItem>();
+					boolean parsed = parseWebPage(webPage, content, mediaItems);
+					if(parsed) { 
+						_collector.emit(WEBPAGE_STREAM, input, tuple(webPage));
+						for(MediaItem mediaItem : mediaItems) {
+							_collector.emit(MEDIA_STREAM, tuple(mediaItem));
+						}
+						_collector.ack(input);
+					}
+					else {
+						_collector.fail(input);
+					}
+					
 				} catch (Exception e) {
 					_logger.error(e);
 					continue;
-				}
-				
-				if(tuple == null) {
-					continue;
-				}
-				
-				WebPage webPage = tuple.getKey();
-				byte[] content = tuple.getRight();
-
-				List<MediaItem> mediaItems = new ArrayList<MediaItem>();
-				boolean parsed = parseWebPage(webPage, content, mediaItems);
-				if(parsed) { 
-					_tupleQueue.add(webPage);
-					for(MediaItem mItem : mediaItems) {
-						_tupleQueue.add(mItem);
-					}
 				}
 			}
 		}
@@ -220,8 +175,9 @@ public class ArticleExtractionBolt extends BaseRichBolt {
 	  	
 	  		String title = document.getTitle();
 	  		
-	  		if(title == null)
+	  		if(title == null) {
 	  			return false;
+	  		}
 	  		
 	  		String text = document.getText(true, false);
 

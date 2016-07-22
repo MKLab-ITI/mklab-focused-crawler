@@ -17,7 +17,6 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
-import org.apache.storm.utils.Utils;
 
 public class RedisSpout extends BaseRichSpout {
 
@@ -112,19 +111,17 @@ public class RedisSpout extends BaseRichSpout {
 
 	public void nextTuple() {
 		String msg = queue.poll();
-        if(msg == null) {
-            Utils.sleep(50);
-        } else {
-            _collector.emit(tuple(msg));            
+        if(msg != null) {
+            _collector.emit(tuple(msg));   
         }
 	}
 
 	public void ack(Object msgId) {
-
+		logger.info("ACK: " + msgId);
 	}
 
 	public void fail(Object msgId) {
-
+		logger.info("FAIL: " + msgId);
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {

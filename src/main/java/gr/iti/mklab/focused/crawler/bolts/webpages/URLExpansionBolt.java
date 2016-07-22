@@ -17,7 +17,6 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
-import org.apache.storm.utils.Utils;
 
 public class URLExpansionBolt extends BaseRichBolt {
 
@@ -43,8 +42,8 @@ public class URLExpansionBolt extends BaseRichBolt {
 		this._collector = collector;
 	}
 
-	public void execute(Tuple tuple) {	
-		WebPage webPage = (WebPage) tuple.getValueByField(inputField);
+	public void execute(Tuple input) {	
+		WebPage webPage = (WebPage) input.getValueByField(inputField);
 		if(webPage != null) {
 			try {
 				String url = webPage.getUrl();
@@ -57,34 +56,27 @@ public class URLExpansionBolt extends BaseRichBolt {
 					
 						webPage.setExpandedUrl(expandedUrl);
 						webPage.setDomain(domain);
-						
-						synchronized(_collector) {
-							_collector.emit(tuple(webPage));
-						}
+
+						_collector.emit(input, tuple(webPage, domain));
+						_collector.ack(input);
 					}
 					catch(Exception e) {
-						//webPage.setStatus("failed");
-						//_collector.emit("update", tuple(webPage));
+						_collector.fail(input);
 						logger.error(e);
 					}
 				}
 				else {
-					//webPage.setStatus("failed");
-					//_collector.emit("update", tuple(webPage));
+					_collector.fail(input);
 				}
 			} catch (Exception e) {
-				//webPage.setStatus("failed");
-				//_collector.emit("update", tuple(webPage));
+				_collector.fail(input);
 				logger.error(e);
 			}
-		}
-		else {
-			Utils.sleep(50);
 		}
 	}
 	
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields(inputField));
+		declarer.declare(new Fields(inputField, "domain"));
 	}
 
 	public static String expand(String shortUrl) throws IOException {

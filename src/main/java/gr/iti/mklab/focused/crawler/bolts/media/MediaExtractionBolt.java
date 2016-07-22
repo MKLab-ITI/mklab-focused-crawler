@@ -33,9 +33,6 @@ public class MediaExtractionBolt extends BaseRichBolt {
 	 * 
 	 */
 	private static final long serialVersionUID = -2548434425109192911L;
-
-	private static String MEDIA_STREAM = "media";
-	private static String WEBPAGE_STREAM = "webpage";
 	
 	private Logger logger;
 	
@@ -52,8 +49,7 @@ public class MediaExtractionBolt extends BaseRichBolt {
 	private Map<String, Retriever> retrievers = new HashMap<String, Retriever>();
 	
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-    	declarer.declareStream(MEDIA_STREAM, new Fields("MediaItem"));
-    	declarer.declareStream(WEBPAGE_STREAM, new Fields("WebPage"));
+    	declarer.declare(new Fields("MediaItem"));
     }
 
 	public void prepare(@SuppressWarnings("rawtypes") Map conf, TopologyContext context, 
@@ -97,9 +93,9 @@ public class MediaExtractionBolt extends BaseRichBolt {
 		
 	}
 
-	public void execute(Tuple tuple) {
+	public void execute(Tuple input) {
 		
-		WebPage webPage = (WebPage) tuple.getValueByField("webPage");
+		WebPage webPage = (WebPage) input.getValueByField("webPage");
 		
 		if(webPage == null)
 			return;
@@ -114,26 +110,20 @@ public class MediaExtractionBolt extends BaseRichBolt {
 				String[] mediaIds = {mediaItem.getId()};
 				webPage.setMediaIds(mediaIds);
 				mediaItem.setReference(webPage.getReference());
+				
+				_collector.emit(tuple(mediaItem));	
+				_collector.ack(input);		
+			}
+			else {
+				logger.error(webPage.getExpandedUrl() + " failed due to null media item");
+				_collector.fail(input);	
 			}
 			
-			synchronized(_collector) {
-				if(mediaItem != null) { 
-					_collector.emit(WEBPAGE_STREAM, tuple(webPage));
-					_collector.emit(MEDIA_STREAM, tuple(mediaItem));
-				}
-				else {
-					logger.error(webPage.getExpandedUrl() + " failed due to null media item");
-					_collector.emit(WEBPAGE_STREAM, tuple(webPage));
-				}
-			}
 		} catch (Exception e) {
-			logger.error(webPage.getExpandedUrl() + " failed due to exception");
-			logger.error(e);
-			synchronized(_collector) {
-				_collector.emit(WEBPAGE_STREAM, tuple(webPage));
-			}
+			logger.error(webPage.getExpandedUrl() + " failed due to exception: " + e.getMessage());
+			_collector.ack(input);	
 		}
-
+		
 	}   
 	
 	private MediaItem getMediaItem(String url) {
