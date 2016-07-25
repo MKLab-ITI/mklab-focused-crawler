@@ -35,6 +35,8 @@ public class RedisSpout extends BaseRichSpout {
 
 	private String outputField;
 
+	private long failed = 0, ack = 0, send = 0, received;
+	
 	public RedisSpout(String host, int port, String pattern, String outputField) {
 		this.host = host;
 		this.port = port;
@@ -58,11 +60,13 @@ public class RedisSpout extends BaseRichSpout {
 
 				@Override
 				public void onMessage(String channel, String message) {
+					received++;
 					queue.offer(message);
 				}
 
 				@Override
 				public void onPMessage(String pattern, String channel, String message) { 
+					received++;
 					queue.offer(message);
 				}
 
@@ -110,18 +114,24 @@ public class RedisSpout extends BaseRichSpout {
 	}
 
 	public void nextTuple() {
+		
 		String msg = queue.poll();
         if(msg != null) {
-            _collector.emit(tuple(msg));   
+        	send++;
+        	_collector.emit(tuple(msg), msg.hashCode());
+        	   
+            if(send%100 == 0) {
+            	logger.info("send: " + send + ", received: " + received +  ", ack: " + ack + ", failed: " + failed + ", in queue: " + queue.size());
+            }
         }
 	}
 
 	public void ack(Object msgId) {
-		logger.info("ACK: " + msgId);
+		ack++;
 	}
 
 	public void fail(Object msgId) {
-		logger.info("FAIL: " + msgId);
+		failed++;
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {

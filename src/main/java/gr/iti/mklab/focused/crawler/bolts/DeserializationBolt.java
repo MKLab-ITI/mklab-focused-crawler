@@ -28,6 +28,9 @@ public class DeserializationBolt<K> extends BaseRichBolt {
 	private String inputField;
 	private Class<K> c;
 
+	
+	private long receivedTuples = 0, emmited = 0;
+	
 	public DeserializationBolt(String inputField, Class<K> c) {
 		this.inputField = inputField;
 		this.c = c;
@@ -42,12 +45,23 @@ public class DeserializationBolt<K> extends BaseRichBolt {
 
 	public void execute(Tuple input) {
 		try {
+			receivedTuples++;
 			String json = input.getStringByField(inputField);
 			K object = WebPage.toObject(json, c);
 			if(object != null) {
+				emmited++;
 				_collector.emit(input, tuple(object));
 				_collector.ack(input);
 			}
+			else {
+				_logger.error("Failed to deserialize " + json);
+				_collector.fail(input);
+			}
+			
+			if(receivedTuples%1000==0) {
+				_logger.info(receivedTuples + " tuples received, " + emmited + " emmited.");
+			}
+			
 		} catch(Exception e) {
 			_collector.fail(input);
 			_logger.error("Exception: " + e.getMessage());

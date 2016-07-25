@@ -34,7 +34,7 @@ public class MediaExtractionBolt extends BaseRichBolt {
 	 */
 	private static final long serialVersionUID = -2548434425109192911L;
 	
-	private Logger logger;
+	private Logger _logger;
 	
 	private OutputCollector _collector;
 	
@@ -54,8 +54,8 @@ public class MediaExtractionBolt extends BaseRichBolt {
 
 	public void prepare(@SuppressWarnings("rawtypes") Map conf, TopologyContext context, 
 			OutputCollector collector) {
-		this._collector = collector;  		
-		logger = Logger.getLogger(MediaExtractionBolt.class);
+		_collector = collector;  		
+		_logger = Logger.getLogger(MediaExtractionBolt.class);
 		
 		Credentials instaCredentials = new Credentials();
 		instaCredentials.setClientId("");
@@ -95,12 +95,13 @@ public class MediaExtractionBolt extends BaseRichBolt {
 
 	public void execute(Tuple input) {
 		
-		WebPage webPage = (WebPage) input.getValueByField("webPage");
-		
-		if(webPage == null)
+		WebPage webPage = (WebPage) input.getValueByField("webpages");
+		if(webPage == null) {
 			return;
+		}
 		
 		String expandedUrl = webPage.getExpandedUrl();
+		_logger.info(expandedUrl);
 		
 		try {
 			MediaItem mediaItem = getMediaItem(expandedUrl);	
@@ -115,12 +116,12 @@ public class MediaExtractionBolt extends BaseRichBolt {
 				_collector.ack(input);		
 			}
 			else {
-				logger.error(webPage.getExpandedUrl() + " failed due to null media item");
+				_logger.error(webPage.getExpandedUrl() + " failed due to null media item");
 				_collector.fail(input);	
 			}
 			
 		} catch (Exception e) {
-			logger.error(webPage.getExpandedUrl() + " failed due to exception: " + e.getMessage());
+			_logger.error(webPage.getExpandedUrl() + " failed due to exception: " + e.getMessage());
 			_collector.ack(input);	
 		}
 		
@@ -168,7 +169,7 @@ public class MediaExtractionBolt extends BaseRichBolt {
 			source = "flickr";
 		}
 		else {
-			logger.error(url + " matches nothing.");
+			_logger.error(url + " matches nothing.");
 			return null;
 		}
 		
@@ -179,7 +180,7 @@ public class MediaExtractionBolt extends BaseRichBolt {
 		try {
 			MediaItem mediaItem = retriever.getMediaItem(mediaId);
 			if(mediaItem == null) {
-				logger.info(mediaId + " from " + source + " is null");
+				_logger.info(mediaId + " from " + source + " is null");
 				return null;
 			}
 			
@@ -199,7 +200,7 @@ public class MediaExtractionBolt extends BaseRichBolt {
 			return mediaItem;
 		}
 		catch(Exception e) {
-			logger.error(e);
+			_logger.error(e);
 			return null;
 		}
 	}

@@ -41,12 +41,12 @@
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpcore</artifactId>
-			<version>4.3.2</version>
+			<version>4.4</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
-			<version>4.3.2</version>
+			<version>4.4</version>
 		</dependency>
 		<dependency>
 			<groupId>gr.iti.mklab</groupId>
@@ -58,6 +58,12 @@
 			<groupId>gr.iti.mklab</groupId>
 			<artifactId>mklab-socialmedia-abstractions</artifactId>
 			<version>0.3-SNAPSHOT</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>commons-httpclient</artifactId>
+					<groupId>commons-httpclient</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		
 		<dependency>
@@ -89,13 +95,6 @@
 			<artifactId>lucene-analyzers-common</artifactId>
 			<version>4.10.2</version>
 		</dependency>
-		
-		
-		<dependency>
-  			<groupId>eu.socialsensor</groupId>
-  			<artifactId>multimedia-indexing</artifactId>
-  			<version>0.1-SNAPSHOT</version>
-  		</dependency>
   		
 		<dependency>
 			<groupId>commons-io</groupId>
@@ -103,25 +102,6 @@
 			<version>2.4</version>
 		</dependency>
 		
-		<dependency>
-			<groupId>edu.stanford.nlp</groupId>
-			<artifactId>stanford-corenlp</artifactId>
-			<version>3.3.1</version>
-		</dependency>
-		
-		<dependency>
-			<groupId>edu.stanford.nlp</groupId>
-			<artifactId>stanford-corenlp</artifactId>
-			<version>3.3.1</version>
-			<classifier>models</classifier>
-		</dependency>
-		
-		<dependency>
-        	<groupId>com.cybozu.labs</groupId>
-        	<artifactId>langdetect</artifactId>
-        	<version>1.1-20120112</version>
-        </dependency>
-
 		<dependency>
 			<groupId>commons-configuration</groupId>
 			<artifactId>commons-configuration</artifactId>
@@ -142,6 +122,19 @@
     		<type>jar</type>
 		</dependency>
 
+		<dependency>
+    		<groupId>org.apache.storm</groupId>
+    		<artifactId>storm-solr</artifactId>
+    		<version>1.0.1</version>
+    		<type>jar</type>
+    		<exclusions>
+    			<exclusion>
+    				<artifactId>commons-httpclient</artifactId>
+    				<groupId>commons-httpclient</groupId>
+    			</exclusion>
+    		</exclusions>
+		</dependency>
+		
 		<dependency>
 			<groupId>com.syncthemall</groupId>
 			<artifactId>boilerpipe</artifactId>
