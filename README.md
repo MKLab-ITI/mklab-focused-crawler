@@ -25,7 +25,14 @@ There is a url (usually shortened), a publication date, the id of the social med
 
 The first bolt in the topology deserializes the messages injected in the topology by the spouts, from a json object to [WebPage](https://github.com/MKLab-ITI/mklab-framework-common/blob/master/src/main/java/gr/iti/mklab/framework/common/domain/WebPage.java) objects. As URLs on Twitter are usually shortened, the next bolt ([URLExpansionBolt](https://github.com/MKLab-ITI/mklab-focused-crawler/blob/dice/src/main/java/gr/iti/mklab/focused/crawler/bolts/webpages/URLExpansionBolt.java)) expands them to long form. The next bolt checks the type of the URLs and its crawling status. URLs that correspond to posts in popular social media platforms (e.g., https://www.youtube.com/watch?v=LHAZYK6x6iE) are redirected to a bolt named [MediaExtractionBolt](https://github.com/MKLab-ITI/mklab-focused-crawler/blob/dice/src/main/java/gr/iti/mklab/focused/crawler/bolts/media/MediaExtractionBolt.java), which retrieves metadata from the respective platforms.
 
-URLs to arbitrary web pages are emitted to a [Fetcher bolt](https://github.com/MKLab-ITI/mklab-focused-crawler/blob/dice/src/main/java/gr/iti/mklab/focused/crawler/bolts/webpages/WebPageFetcherBolt.java). Non-HTML content is discarded. The fetched content is then forwarded to the next bolt ([ArticleExtractionBolt](https://github.com/MKLab-ITI/mklab-focused-crawler/blob/dice/src/main/java/gr/iti/mklab/focused/crawler/bolts/webpages/ArticleExtractionBolt.java)) that attempts to extract articles and embedded media items. The extracted articles are indexed in a running Solr instance by the Text Indexer. The extracted media items, as well as the media items coming from the Social Media Retriever bolt are handled by the Media Text Indexer.
+URLs to arbitrary web pages are emitted to a [Fetcher bolt](https://github.com/MKLab-ITI/mklab-focused-crawler/blob/dice/src/main/java/gr/iti/mklab/focused/crawler/bolts/webpages/WebPageFetcherBolt.java). Non-HTML content is discarded. The fetched content is then forwarded to the next bolt ([ArticleExtractionBolt](https://github.com/MKLab-ITI/mklab-focused-crawler/blob/dice/src/main/java/gr/iti/mklab/focused/crawler/bolts/webpages/ArticleExtractionBolt.java)) that attempts to extract articles and embedded media items. The extracted articles are indexed in a running Solr instance by the Text Indexer. The extracted media items, as well as the media items coming from the MediaExtractionBolt are handled by the Media Text Indexer.
 
 
-### mongodb,  solr & redis
+### Building & Configuration  
+
+To build the executable jar use the following mvn command:
+```sh
+  $mvn clean assembly:assembly
+```
+
+The main class of the topology is *gr.iti.mklab.focused.crawler.DICECrawler*. This entry point is specified in the pom.xml file in the maven-assembly-plugin.
