@@ -65,7 +65,7 @@ Finnaly, to specify whether storm topology will run in a storm cluster or in loc
 If *local* parameter is true then the topology will run in a simulated local cluster:
 ```sh
       LocalCluster cluster = new LocalCluster();
-	    cluster.submitTopology(name, conf, topology);
+      cluster.submitTopology(name, conf, topology);
 ```
 
 In other case the topology will be submitted in a running storm cluster:
@@ -82,4 +82,14 @@ To build the executable jar use the following mvn command:
 
 The generated jar, named *focused-crawler-jar-with-dependencies.jar*, contains all the dependencies and the configuration file described above and can be used for submission in a running storm cluster. The main class of the topology is *gr.iti.mklab.focused.crawler.DICECrawler*. This entry point is specified in the pom.xml file in the maven-assembly-plugin.
 
-To submit on storm
+To submit on storm:
+```sh
+  storm jar focused-crawler-jar-with-dependencies.jar gr.iti.mklab.focused.crawler.DICECrawler
+```
+The following parameters of storm can be specified in the topology level in order to maximaze the performance of crawler:
+
+* Config.TOPOLOGY_WORKERS: This sets the number of worker processes to use to execute the topology. For example, if you set this to 25, there will be 25 Java processes across the cluster executing all the tasks. If you had a combined 150 parallelism across all components in the topology, each worker process will have 6 tasks running within it as threads.
+
+* Config.TOPOLOGY_MAX_SPOUT_PENDING: This sets the maximum number of spout tuples that can be pending on a single spout task at once (pending means the tuple has not been acked or failed yet). It is highly recommended you set this config to prevent queue explosion.
+
+* Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS: This is the maximum amount of time a spout tuple has to be fully completed before it is considered failed. This value defaults to 30 seconds, which is sufficient for most topologies. See Guaranteeing message processing for more information on how Storm's reliability model works.
