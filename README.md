@@ -117,3 +117,10 @@ The following parameters of storm can be specified in the topology level in orde
 * Config.TOPOLOGY_MAX_SPOUT_PENDING: This sets the maximum number of spout tuples that can be pending on a single spout task at once (pending means the tuple has not been acked or failed yet). It is highly recommended you set this config to prevent queue explosion.
 
 * Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS: This is the maximum amount of time a spout tuple has to be fully completed before it is considered failed. This value defaults to 30 seconds, which is sufficient for most topologies. See Guaranteeing message processing for more information on how Storm's reliability model works.
+
+
+## For more details about the project contact
+
+Manos Schinas (manosetro@iti.gr), Symeon Papadopoulos (papadop@iti.gr)
+
+Download as [pdf](https://github.com/MKLab-ITI/mklab-focused-crawler/blob/dice/README.pdf)
