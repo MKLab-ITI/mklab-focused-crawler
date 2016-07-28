@@ -170,6 +170,7 @@
       		<plugin>
     			<artifactId>maven-assembly-plugin</artifactId>
     			<configuration>
+    				<finalName>focused-crawler</finalName>
       				<descriptorRefs>  
         				<descriptorRef>jar-with-dependencies</descriptorRef>
       				</descriptorRefs>

@@ -55,6 +55,24 @@ The next part is the section that specifies solr parametets:
 
 The running instance of Solr has to contain to cores, corresponding to web pages and media items. The configuration files and the schema of each of these cores can be found [here](https://github.com/MKLab-ITI/mmdemo-dockerized/tree/master/solr-cores).
 
+Finnaly, to specify whether storm topology will run in a storm cluster or in local mode the following section has to be set:
+```sh
+<topology>
+    <focusedCrawlerName>DiceFocusedCrawler</focusedCrawlerName>
+    <local>true</local>
+</topology>
+```
+If *local* parameter is true then the topology will run in a simulated local cluster:
+```sh
+      LocalCluster cluster = new LocalCluster();
+	    cluster.submitTopology(name, conf, topology);
+```
+
+In other case the topology will be submitted in a running storm cluster:
+```sh
+      StormSubmitter.submitTopology(name, conf, topology);
+```
+
 Note that setting of parametets in the configuration file, must be performed before jar building, as that jar has to contain all the necessary files for execution.
 To build the executable jar use the following mvn command:
 
@@ -62,6 +80,6 @@ To build the executable jar use the following mvn command:
   $mvn clean assembly:assembly
 ```
 
-The generated jar contains all the dependencies and the configuration file described above and can be used for submission in a running storm cluster. The main class of the topology is *gr.iti.mklab.focused.crawler.DICECrawler*. This entry point is specified in the pom.xml file in the maven-assembly-plugin.
+The generated jar, named *focused-crawler-jar-with-dependencies.jar*, contains all the dependencies and the configuration file described above and can be used for submission in a running storm cluster. The main class of the topology is *gr.iti.mklab.focused.crawler.DICECrawler*. This entry point is specified in the pom.xml file in the maven-assembly-plugin.
 
-To submit on
+To submit on storm

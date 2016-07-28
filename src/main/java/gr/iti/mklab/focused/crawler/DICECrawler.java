@@ -1,5 +1,6 @@
 package gr.iti.mklab.focused.crawler;
 
+import java.io.File;
 import java.net.UnknownHostException;
 
 import org.apache.commons.configuration.ConfigurationException;
@@ -55,8 +56,11 @@ public class DICECrawler {
 		try {
 			if(args.length == 1)
 				config = new XMLConfiguration(args[0]);
-			else
-				config = new XMLConfiguration("./conf/dice.crawler.xml");
+			else {
+				ClassLoader classLoader = DICECrawler.class.getClassLoader();
+				File configFile = new File(classLoader.getResource("dice.crawler.xml").getFile());
+				config = new XMLConfiguration(configFile);
+			}
 		}
 		catch(ConfigurationException ex) {
 			logger.error(ex);
@@ -81,9 +85,8 @@ public class DICECrawler {
         if(!local) {
         	logger.info("Submit topology to Storm cluster");
 			try {
-				int workers = config.getInt("topology.workers", 20);
-				conf.setNumWorkers(workers);
-				
+				//int workers = config.getInt("topology.workers", 20);
+				//conf.setNumWorkers(workers);	
 				StormSubmitter.submitTopology(name, conf, topology);
 			}
 			catch(NumberFormatException e) {
@@ -99,7 +102,7 @@ public class DICECrawler {
 		} else {
 			logger.info("Run topology in local mode");
 			LocalCluster cluster = new LocalCluster();
-			conf.setNumWorkers(20);
+			//conf.setNumWorkers(20);
 			cluster.submitTopology(name, conf, topology);
 		}
 	}
@@ -120,7 +123,7 @@ public class DICECrawler {
 		
 		BaseRichSpout wpSpout;
 		IRichBolt wpDeserializer, urlExpander, urlCrawlDeciderBolt, fetcher, articleExtraction;
-		//IRichBolt mediaExtraction;
+		IRichBolt mediaExtraction;
 		IRichBolt webpagesSolrUpdater, mediaitemsSolrUpdater;
 		
 		try {
@@ -132,7 +135,7 @@ public class DICECrawler {
 			fetcher = new WebPageFetcherBolt("webpages", 6);
 			articleExtraction = new ArticleExtractionBolt();
 			
-			//mediaExtraction = new MediaExtractionBolt();
+			mediaExtraction = new MediaExtractionBolt();
 
 			webpagesSolrUpdater = new SolrBolt(indexService, webpagesCollection, new CountBasedCommit(100));
 			mediaitemsSolrUpdater = new SolrBolt(indexService, mediaitemsCollection, new CountBasedCommit(100));
@@ -167,20 +170,18 @@ public class DICECrawler {
 			.shuffleGrouping("fetcher");
 		
 		// web pages indexer
-		//builder.setBolt("textIndexer", webpagesSolrUpdater, 1)
-		//	.shuffleGrouping("articleExtraction", ArticleExtractionBolt.WEBPAGE_STREAM);
+		builder.setBolt("textIndexer", webpagesSolrUpdater, 1)
+			.shuffleGrouping("articleExtraction", ArticleExtractionBolt.WEBPAGE_STREAM);
 		
 		// media item extraction bolt
-		//builder.setBolt("mediaExtraction", mediaExtraction, 1)
-		//	.shuffleGrouping("crawlDecider", UrlCrawlDeciderBolt.MEDIA_STREAM);
+		builder.setBolt("mediaExtraction", mediaExtraction, 1)
+			.shuffleGrouping("crawlDecider", UrlCrawlDeciderBolt.MEDIA_STREAM);
 
 		// media items indexer
-		//builder.setBolt("mediaIndexer", mediaitemsSolrUpdater, 1)
-		//	.shuffleGrouping("articleExtraction", ArticleExtractionBolt.MEDIA_STREAM);
+		builder.setBolt("mediaIndexer", mediaitemsSolrUpdater, 1)
+			.shuffleGrouping("articleExtraction", ArticleExtractionBolt.MEDIA_STREAM);
+			//.shuffleGrouping("mediaExtraction");
 		
-		//builder.setBolt("mediatextindexer", mediaTextIndexer, 1)
-		//	.shuffleGrouping("articleExtraction", "mediaitems")
-		//	.shuffleGrouping("mediaExtraction", "mediaitems");
 		
 		StormTopology topology = builder.createTopology();
 		return topology;
