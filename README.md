@@ -30,7 +30,7 @@ URLs to arbitrary web pages are emitted to a [Fetcher bolt](https://github.com/M
 
 ### Building & Configuration  
 
-To run the topology a set of parametets has to be specified in the configuration [file](https://github.com/MKLab-ITI/mklab-focused-crawler/blob/dice/conf/dice.crawler.xml). The first parametets have to be specified are those concern the running instance of redis:
+To run the predefined topology (with Redis as a spout) a set of parametets has to be specified in the configuration [file](https://github.com/MKLab-ITI/mklab-focused-crawler/blob/dice/src/main/resources/dice.crawler.xml). The first parametets have to be specified are those concern the running instance of redis:
 
 ```sh
     <redis>
@@ -55,6 +55,7 @@ The next part is the section that specifies solr parametets:
 
 The running instance of Solr has to contain to cores, corresponding to web pages and media items. The configuration files and the schema of each of these cores can be found [here](https://github.com/MKLab-ITI/mmdemo-dockerized/tree/master/solr-cores).
 
+Note that setting of parametets in the configuration file, must be performed before jar building, as that jar has to contain all the necessary files for execution.
 To build the executable jar use the following mvn command:
 
 ```sh
@@ -62,3 +63,5 @@ To build the executable jar use the following mvn command:
 ```
 
 The generated jar contains all the dependencies and the configuration file described above and can be used for submission in a running storm cluster. The main class of the topology is *gr.iti.mklab.focused.crawler.DICECrawler*. This entry point is specified in the pom.xml file in the maven-assembly-plugin.
+
+To submit on
