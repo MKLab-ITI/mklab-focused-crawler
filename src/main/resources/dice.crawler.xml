@@ -19,7 +19,7 @@
     </mongodb>
     
     <textindex>
-        <host>xxx.xxx.xxx.xxx</host>
+        <host>188.214.128.152</host>
         <port>8983</port>port>
         <collections>
         	<webpages>WebPages</webpages>
@@ -27,6 +27,23 @@
         </collections>
     </textindex>
   
+    <mediaextractor>
+        <youtube>
+        	<key></key>
+        </youtube>
+       	<facebook>
+        	<accesstoken></accesstoken>
+        </facebook>
+      	<instagram>
+        	<accesstoken></accesstoken>
+        	<accesstokensecret></accesstokensecret>
+        </instagram>
+       	<flickr>
+        	<key></key>
+        	<secret></secret>
+        </<flickr>>
+    </mediaextractor>
+    
     <topology>
         <focusedCrawlerName>DiceFocusedCrawler</focusedCrawlerName>
         <local>true</local>

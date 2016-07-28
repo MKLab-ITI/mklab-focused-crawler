@@ -12,10 +12,8 @@ import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.storm.solr.config.CountBasedCommit;
 import org.apache.storm.solr.config.SolrCommitStrategy;
 
-import gr.iti.mklab.framework.client.search.solr.beans.WebPageBean;
-import gr.iti.mklab.framework.common.domain.WebPage;
-
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -42,15 +40,20 @@ public class SolrBolt extends BaseRichBolt {
 
 	private String collection;
 
-    public SolrBolt(String service, String collection) {
-        this(service, collection, null);
+	private Class<?> c;
+	private String inputField;
+
+    public SolrBolt(String service, String collection, Class<?> c, String inputField) {
+        this(service, collection, null, c, inputField);
     }
 
-    public SolrBolt(String service, String collection, SolrCommitStrategy commitStgy) {
+    public SolrBolt(String service, String collection, SolrCommitStrategy commitStgy, Class<?> c, String inputField) {
         this.service = service;
         this.collection = collection;
         
         this.commitStgy = commitStgy;
+        this.c = c;
+        this.inputField = inputField;
     }
 
     @Override
@@ -71,9 +74,11 @@ public class SolrBolt extends BaseRichBolt {
     public void execute(Tuple tuple) {
         try {
             if (!TupleUtils.isTick(tuple)) {    // Don't add tick tuples to the SolrRequest
-                WebPage webPage = (WebPage) tuple.getValueByField("webpages");
-                WebPageBean wpb = new WebPageBean(webPage);
-                solrClient.addBean(collection, wpb);
+            	
+            	Object data = tuple.getValueByField(inputField);
+            	Constructor<?> constructor = Class.forName(c.getName()).getConstructor(data.getClass());
+				Object k = constructor.newInstance(data);
+            	solrClient.addBean(collection, k);
             }
             ack(tuple);
         } catch (Exception e) {

@@ -14,8 +14,6 @@ import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.solr.config.CountBasedCommit;
-import org.apache.storm.solr.config.SolrConfig;
-import org.apache.storm.solr.mapper.SolrJsonMapper;
 import org.apache.storm.topology.IRichBolt;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.topology.base.BaseRichSpout;
@@ -23,13 +21,14 @@ import org.apache.storm.tuple.Fields;
 
 import gr.iti.mklab.focused.crawler.bolts.DeserializationBolt;
 import gr.iti.mklab.focused.crawler.bolts.media.MediaExtractionBolt;
-import gr.iti.mklab.focused.crawler.bolts.media.MediaTextIndexerBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.ArticleExtractionBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.SolrBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.URLExpansionBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.UrlCrawlDeciderBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.WebPageFetcherBolt;
 import gr.iti.mklab.focused.crawler.spouts.RedisSpout;
+import gr.iti.mklab.framework.client.search.solr.beans.MediaItemBean;
+import gr.iti.mklab.framework.client.search.solr.beans.WebPageBean;
 import gr.iti.mklab.framework.common.domain.WebPage;
 
 
@@ -135,10 +134,10 @@ public class DICECrawler {
 			fetcher = new WebPageFetcherBolt("webpages", 6);
 			articleExtraction = new ArticleExtractionBolt();
 			
-			mediaExtraction = new MediaExtractionBolt();
+			mediaExtraction = new MediaExtractionBolt(config);
 
-			webpagesSolrUpdater = new SolrBolt(indexService, webpagesCollection, new CountBasedCommit(100));
-			mediaitemsSolrUpdater = new SolrBolt(indexService, mediaitemsCollection, new CountBasedCommit(100));
+			webpagesSolrUpdater = new SolrBolt(indexService, webpagesCollection, new CountBasedCommit(100), WebPageBean.class, "webpages");
+			mediaitemsSolrUpdater = new SolrBolt(indexService, mediaitemsCollection, new CountBasedCommit(100), MediaItemBean.class, "mediaitems");
 			
 		} catch (Exception e) {
 			logger.error(e);
@@ -179,12 +178,13 @@ public class DICECrawler {
 
 		// media items indexer
 		builder.setBolt("mediaIndexer", mediaitemsSolrUpdater, 1)
-			.shuffleGrouping("articleExtraction", ArticleExtractionBolt.MEDIA_STREAM);
-			//.shuffleGrouping("mediaExtraction");
+			.shuffleGrouping("articleExtraction", ArticleExtractionBolt.MEDIA_STREAM)
+			.shuffleGrouping("mediaExtraction");
 		
 		
 		StormTopology topology = builder.createTopology();
 		return topology;
+		
 	}
 	
 }

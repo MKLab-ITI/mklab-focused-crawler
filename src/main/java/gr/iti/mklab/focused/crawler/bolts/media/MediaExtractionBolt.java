@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.log4j.Logger;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -47,6 +48,12 @@ public class MediaExtractionBolt extends BaseRichBolt {
 	private static Pattern flickrPattern 		= 	Pattern.compile("https*://flickr.com/photos/([A-Za-z0-9@]+)/([A-Za-z0-9@]+)/*.*$");
 	
 	private Map<String, Retriever> retrievers = new HashMap<String, Retriever>();
+
+	private XMLConfiguration config;
+	
+	public MediaExtractionBolt(XMLConfiguration config) {
+		this.config = config;
+	}
 	
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
     	declarer.declare(new Fields("MediaItem"));
@@ -54,42 +61,52 @@ public class MediaExtractionBolt extends BaseRichBolt {
 
 	public void prepare(@SuppressWarnings("rawtypes") Map conf, TopologyContext context, 
 			OutputCollector collector) {
+		
 		_collector = collector;  		
 		_logger = Logger.getLogger(MediaExtractionBolt.class);
 		
-		Credentials instaCredentials = new Credentials();
-		instaCredentials.setClientId("");
-		instaCredentials.setKey("");
-		retrievers.put("instagram", new InstagramRetriever(instaCredentials));
 		
-		Credentials yrCredentials = new Credentials();
-		yrCredentials.setClientId("");
-		yrCredentials.setKey("");
-		retrievers.put("youtube", new YoutubeRetriever(yrCredentials));
+		String instaAccessToken = config.getString("mediaextractor.instagram.accesstoken");
+		String instaAccessTokenSecret = config.getString("mediaextractor.instagram.accesstokensecret");
+		if(instaAccessToken != null && instaAccessTokenSecret != null) {
+			Credentials instaCredentials = new Credentials();
+			instaCredentials.setClientId(instaAccessToken);
+			instaCredentials.setKey(instaAccessTokenSecret);
+			retrievers.put("instagram", new InstagramRetriever(instaCredentials));
+		}
+		
+		String ytKey = config.getString("mediaextractor.youtube.key");
+		if(ytKey != null) {
+			Credentials yrCredentials = new Credentials();
+			yrCredentials.setKey(ytKey);
+			retrievers.put("youtube", new YoutubeRetriever(yrCredentials));
+		}
 		
 		Credentials vimeoCredentials = new Credentials();
-		vimeoCredentials.setClientId("");
-		vimeoCredentials.setKey("");
 		retrievers.put("vimeo", new VimeoRetriever(vimeoCredentials));
 		
 		Credentials twpCredentials = new Credentials();
-		twpCredentials.setClientId("");
-		twpCredentials.setKey("");
 		retrievers.put("twitpic", new TwitpicRetriever(twpCredentials));
 		
 		Credentials dmCredentials = new Credentials();
-		dmCredentials.setClientId("");
-		dmCredentials.setKey("");
 		retrievers.put("dailymotion", new DailyMotionRetriever(dmCredentials));
 		
-		Credentials fbCredentials = new Credentials();
-		fbCredentials.setAccessToken("");
-		retrievers.put("facebook", new FacebookRetriever(fbCredentials));
+		String fbAccessToken = config.getString("mediaextractor.facebook.accesstoken");
+		if(fbAccessToken != null) {
+			Credentials fbCredentials = new Credentials();
+			fbCredentials.setAccessToken(fbAccessToken);
+			retrievers.put("facebook", new FacebookRetriever(fbCredentials));
+		}
 		
-		Credentials flickrCredentials = new Credentials();
-		flickrCredentials.setKey("");
-		flickrCredentials.setSecret("");
-		retrievers.put("flickr", new FlickrRetriever(flickrCredentials));
+		
+		String flickrKey = config.getString("mediaextractor.flickr.key");
+		String flickrSecret = config.getString("mediaextractor.flickr.secret");
+		if(flickrKey != null && flickrSecret != null) {
+			Credentials flickrCredentials = new Credentials();
+			flickrCredentials.setKey(flickrKey);
+			flickrCredentials.setSecret(flickrSecret);
+			retrievers.put("flickr", new FlickrRetriever(flickrCredentials));
+		}
 		
 	}
 
