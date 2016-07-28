@@ -25,7 +25,6 @@ import gr.iti.mklab.focused.crawler.bolts.media.MediaExtractionBolt;
 import gr.iti.mklab.focused.crawler.bolts.media.MediaTextIndexerBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.ArticleExtractionBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.SolrBolt;
-import gr.iti.mklab.focused.crawler.bolts.webpages.TextIndexerBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.URLExpansionBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.UrlCrawlDeciderBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.WebPageFetcherBolt;
@@ -121,7 +120,7 @@ public class DICECrawler {
 		
 		BaseRichSpout wpSpout;
 		IRichBolt wpDeserializer, urlExpander, urlCrawlDeciderBolt, fetcher, articleExtraction;
-		IRichBolt mediaExtraction;
+		//IRichBolt mediaExtraction;
 		IRichBolt webpagesSolrUpdater, mediaitemsSolrUpdater;
 		
 		try {
@@ -129,11 +128,11 @@ public class DICECrawler {
 			wpSpout = new RedisSpout(redisHost, redisPort, webPagesChannel, "webpages");
 			wpDeserializer = new DeserializationBolt<WebPage>("webpages", WebPage.class);
 			urlExpander = new URLExpansionBolt("webpages");
-			urlCrawlDeciderBolt = new UrlCrawlDeciderBolt("webpages");
+			urlCrawlDeciderBolt = new UrlCrawlDeciderBolt("webpages", redisHost, redisPort);
 			fetcher = new WebPageFetcherBolt("webpages", 6);
 			articleExtraction = new ArticleExtractionBolt();
 			
-			mediaExtraction = new MediaExtractionBolt();
+			//mediaExtraction = new MediaExtractionBolt();
 
 			webpagesSolrUpdater = new SolrBolt(indexService, webpagesCollection, new CountBasedCommit(100));
 			mediaitemsSolrUpdater = new SolrBolt(indexService, mediaitemsCollection, new CountBasedCommit(100));
@@ -167,18 +166,18 @@ public class DICECrawler {
 		builder.setBolt("articleExtraction", articleExtraction, 8)
 			.shuffleGrouping("fetcher");
 		
-		builder.setBolt("textIndexer", webpagesSolrUpdater, 1)
-			.shuffleGrouping("articleExtraction", ArticleExtractionBolt.WEBPAGE_STREAM);
+		// web pages indexer
+		//builder.setBolt("textIndexer", webpagesSolrUpdater, 1)
+		//	.shuffleGrouping("articleExtraction", ArticleExtractionBolt.WEBPAGE_STREAM);
 		
 		// media item extraction bolt
-		builder.setBolt("mediaExtraction", mediaExtraction, 1)
-			.shuffleGrouping("crawlDecider", UrlCrawlDeciderBolt.MEDIA_STREAM);
-				
-		// web pages indexer
-		//builder.setBolt("textIndexer", textIndexer, 1)
-		//	.shuffleGrouping("articleExtraction", "webpages");
+		//builder.setBolt("mediaExtraction", mediaExtraction, 1)
+		//	.shuffleGrouping("crawlDecider", UrlCrawlDeciderBolt.MEDIA_STREAM);
 
 		// media items indexer
+		//builder.setBolt("mediaIndexer", mediaitemsSolrUpdater, 1)
+		//	.shuffleGrouping("articleExtraction", ArticleExtractionBolt.MEDIA_STREAM);
+		
 		//builder.setBolt("mediatextindexer", mediaTextIndexer, 1)
 		//	.shuffleGrouping("articleExtraction", "mediaitems")
 		//	.shuffleGrouping("mediaExtraction", "mediaitems");

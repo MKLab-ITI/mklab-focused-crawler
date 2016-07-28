@@ -1,6 +1,8 @@
 package gr.iti.mklab.focused.crawler.spouts;
 
 import static org.apache.storm.utils.Utils.tuple;
+import gr.iti.mklab.focused.crawler.utils.UrlStatusMonitor;
+import gr.iti.mklab.focused.crawler.utils.UrlStatusMonitor.PROCESSING_STATUS;
 
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -17,6 +19,9 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
+
+import com.mongodb.DBObject;
+import com.mongodb.util.JSON;
 
 public class RedisSpout extends BaseRichSpout {
 
@@ -36,6 +41,8 @@ public class RedisSpout extends BaseRichSpout {
 	private String outputField;
 
 	private long failed = 0, ack = 0, send = 0, received;
+
+	private UrlStatusMonitor urlStatus;
 	
 	public RedisSpout(String host, int port, String pattern, String outputField) {
 		this.host = host;
@@ -104,6 +111,8 @@ public class RedisSpout extends BaseRichSpout {
 		JedisPoolConfig jedisConf = new JedisPoolConfig();
 		pool = new JedisPool(jedisConf, host, port);
 		
+		urlStatus = new UrlStatusMonitor(pool);
+		
 		ListenerThread listener = new ListenerThread(queue, pool);
 		listener.start();
 		
@@ -117,21 +126,38 @@ public class RedisSpout extends BaseRichSpout {
 		
 		String msg = queue.poll();
         if(msg != null) {
-        	send++;
-        	_collector.emit(tuple(msg), msg.hashCode());
-        	   
-            if(send%100 == 0) {
-            	logger.info("send: " + send + ", received: " + received +  ", ack: " + ack + ", failed: " + failed + ", in queue: " + queue.size());
-            }
+        	try {
+        		DBObject obj = (DBObject) JSON.parse(msg);
+        		
+        		String url = (String) obj.get("url");
+        		PROCESSING_STATUS status = urlStatus.getProcessingStatus(url);
+        		logger.info(url + " => " + status);
+        		if(status.equals(PROCESSING_STATUS.NEW)) {
+        
+        			send++;
+        			_collector.emit(tuple(obj), url);
+        			
+        			urlStatus.setProcessingStatus(url, status);
+        			
+        			 if(send%100 == 0) {
+        				 logger.info("send: " + send + ", received: " + received +  ", ack: " + ack + ", failed: " + failed + ", in queue: " + queue.size());
+        			 }
+        		}
+        	}
+        	catch(Exception e) {
+        		e.printStackTrace();
+        	}
         }
 	}
 
 	public void ack(Object msgId) {
 		ack++;
+		urlStatus.setProcessingStatus(msgId.toString(), PROCESSING_STATUS.PROCCESSED);
 	}
 
 	public void fail(Object msgId) {
 		failed++;
+		urlStatus.setProcessingStatus(msgId.toString(), PROCESSING_STATUS.FAILED);
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {

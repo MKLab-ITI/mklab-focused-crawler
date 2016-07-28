@@ -14,6 +14,10 @@ import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
+import gr.iti.mklab.focused.crawler.utils.UrlStatusMonitor;
+import gr.iti.mklab.focused.crawler.utils.UrlStatusMonitor.CRAWL_STATUS;
 import gr.iti.mklab.framework.common.domain.WebPage;
 
 public class UrlCrawlDeciderBolt extends BaseRichBolt {
@@ -32,8 +36,13 @@ public class UrlCrawlDeciderBolt extends BaseRichBolt {
 
 	private String inputField;
 	private Set<String> socialMediaTargets = new HashSet<String>();
+
+	private String redisHost;
+	private int redisPort;
+
+	private UrlStatusMonitor urlStatus;
 	
-	public UrlCrawlDeciderBolt(String inputField) {
+	public UrlCrawlDeciderBolt(String inputField, String redisHost, int redisPort) {
 		this.inputField = inputField;
 		
 		socialMediaTargets.add("vimeo.com");
@@ -43,6 +52,10 @@ public class UrlCrawlDeciderBolt extends BaseRichBolt {
 		socialMediaTargets.add("dailymotion.com");
 		socialMediaTargets.add("www.facebook.com");
 		socialMediaTargets.add("twitter.com");
+		
+		this.redisHost = redisHost;
+		this.redisPort = redisPort;
+		
 	}
 	
 	public void prepare(@SuppressWarnings("rawtypes") Map stormConf, TopologyContext context,
@@ -50,6 +63,11 @@ public class UrlCrawlDeciderBolt extends BaseRichBolt {
 		
 		this._collector = collector;
 		this._logger = Logger.getLogger(UrlCrawlDeciderBolt.class);
+		
+		JedisPoolConfig jedisConf = new JedisPoolConfig();
+		JedisPool pool = new JedisPool(jedisConf, redisHost, redisPort);
+		
+		urlStatus = new UrlStatusMonitor(pool);
 	}
 
 	public void execute(Tuple input) {
@@ -62,8 +80,15 @@ public class UrlCrawlDeciderBolt extends BaseRichBolt {
 					_collector.ack(input);
 				}
 				else {
-					_collector.emit("webpages", input, tuple(webPage, webPage.getDomain()));
-					_collector.ack(input);
+					String url = webPage.getExpandedUrl();
+					CRAWL_STATUS crawlStatus = urlStatus.getCrawlStatus(url);
+					if(crawlStatus == null || crawlStatus.equals(CRAWL_STATUS.NEW)) {	
+					
+						_collector.emit("webpages", input, tuple(webPage, webPage.getDomain()));
+						_collector.ack(input);
+						
+						urlStatus.setCrawlStatus(url, CRAWL_STATUS.QUEUED);
+					}
 				}
 			}
 			else {

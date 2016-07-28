@@ -13,6 +13,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.entity.ContentType;
@@ -78,7 +79,7 @@ public class WebPageFetcherBolt extends BaseRichBolt {
 		
 		_cm.setMaxTotal(8*numOfFetchers);
 		_cm.setDefaultMaxPerRoute(numOfFetchers);
-
+		
 		_httpclient = HttpClients.custom()
 		        .setConnectionManager(_cm)
 		        .build();
@@ -87,6 +88,7 @@ public class WebPageFetcherBolt extends BaseRichBolt {
 		_requestConfig = RequestConfig.custom()
 		        .setSocketTimeout(5000)
 		        .setConnectTimeout(5000)
+		        .setCookieSpec(CookieSpecs.STANDARD)
 		        .build();
 	    
 		_statusWriter = new Thread(new StatusWriter());
@@ -181,6 +183,7 @@ public class WebPageFetcherBolt extends BaseRichBolt {
 					
 					httpget = new HttpGet(uri);
 					httpget.setConfig(_requestConfig);
+					
 					HttpResponse response = _httpclient.execute(httpget);
 					
 					HttpEntity entity = response.getEntity();

@@ -14,6 +14,8 @@ import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 
+import com.mongodb.DBObject;
+
 public class DeserializationBolt<K> extends BaseRichBolt {
 
 	/**
@@ -46,15 +48,15 @@ public class DeserializationBolt<K> extends BaseRichBolt {
 	public void execute(Tuple input) {
 		try {
 			receivedTuples++;
-			String json = input.getStringByField(inputField);
-			K object = WebPage.toObject(json, c);
+			DBObject obj = (DBObject) input.getValueByField(inputField);
+			K object = WebPage.toObject(obj, c);
 			if(object != null) {
 				emmited++;
 				_collector.emit(input, tuple(object));
 				_collector.ack(input);
 			}
 			else {
-				_logger.error("Failed to deserialize " + json);
+				_logger.error("Failed to deserialize " + obj);
 				_collector.fail(input);
 			}
 			

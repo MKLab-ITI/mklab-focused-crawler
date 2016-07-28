@@ -100,9 +100,7 @@ public class MediaExtractionBolt extends BaseRichBolt {
 			return;
 		}
 		
-		String expandedUrl = webPage.getExpandedUrl();
-		_logger.info(expandedUrl);
-		
+		String expandedUrl = webPage.getExpandedUrl();		
 		try {
 			MediaItem mediaItem = getMediaItem(expandedUrl);	
 			

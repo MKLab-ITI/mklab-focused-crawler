@@ -70,6 +70,7 @@ public class ArticleExtractor {
 	  		String title = document.getTitle();
 	  		
 	  		if(title == null) {
+	  			_logger.error("Failed to extract title for " + base);
 	  			return false;
 	  		}
 	  		
