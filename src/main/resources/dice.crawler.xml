@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<configuration>
+
+    <redis>
+        <hostname>127.0.0.1</hostname>
+        <webPagesChannel>DiceWebPages</webPagesChannel>
+    </redis>
+
+    <mongodb>
+        <hostname>xxx.xxx.xxx.xxx</hostname>
+        <webPagesDB>Prototype</webPagesDB>
+        <webpagesCollection>WebPages</webpagesCollection>
+        <mediaItemsDB>Prototype</mediaItemsDB>
+        <mediaItemsCollection>MediaItems</mediaItemsCollection>
+        <streamUsersDB>Prototype</streamUsersDB>
+        <streamUsersCollection>StreamUsers</streamUsersCollection>
+        <clustersDB>Prototype</clustersDB>
+        <clustersCollection>MediaClusters</clustersCollection>
+    </mongodb>
+    
+    <textindex>
+        <host>xxx.xxx.xxx.xxx</host>
+        <port>8983</port>port>
+        <collections>
+        	<webpages>WebPages</webpages>
+        	<media>MediaItems</media>
+        </collections>
+    </textindex>
+  
+    <topology>
+        <focusedCrawlerName>DiceFocusedCrawler</focusedCrawlerName>
+        <local>true</local>
+        <workers>1</workers>
+    </topology>
+
+</configuration>
