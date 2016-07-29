@@ -119,6 +119,32 @@ The following parameters of storm can be specified in the topology level in orde
 * Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS: This is the maximum amount of time a spout tuple has to be fully completed before it is considered failed. This value defaults to 30 seconds, which is sufficient for most topologies. See Guaranteeing message processing for more information on how Storm's reliability model works.
 
 
+### Testing of focused crawler
+
+To test the topology, two sets of URLs can be used. The [first](https://drive.google.com/open?id=0B6e0EQ839AZzSzgzRDBRVVJiem8), is a set of 247392 URLs collected using the sample method of Twitter Streaming API. Namely, we collected the URLs embedded in the tweets returned by the sample method for a period of 1 day(28-29/7/2016). The [second set](https://drive.google.com/open?id=0B6e0EQ839AZzNTJCVW1TZUROa2M) contains 2089930 URLs embedded in messages posted in Twitter, Facebook and Google+ that are mostly related to environmental issues.  
+To inject these URLs into the topology through Redis, the following bash script can be used:
+```sh
+  #!/bin/bash
+  input="$1"
+  period=$(echo "1.0/$4" | bc -l)
+  while IFS= read -r var
+  do
+    sleep $period
+    redis-cli -h $2 publish "$3" "$var"
+  done < "$input"
+```
+
+To run the above script (named *emit_script.sh*), use this command:
+```sh
+  $ ./emit_script.sh /path/to/urls/file redis_host redis_channel input_rate
+```
+For example:
+```sh
+  $ ./emit_script.sh urls.txt 127.0.0.1 webpages 100
+```
+
+This script reads line by line the URLs contained in the file specified in the first argument. The next two arguments (redis_host & redis_channel) specify the running instance of Redis and the name of the channel that the script will publish the URLs. Note that the Redis spout of the topology must listen to the same channel. The last argument specifies the number of URLs emmited per second. This can be used to investigate the throughput of focused crawler, under different input rates.
+
 ## For more details about the project contact
 
 Manos Schinas (manosetro@iti.gr), Symeon Papadopoulos (papadop@iti.gr)
