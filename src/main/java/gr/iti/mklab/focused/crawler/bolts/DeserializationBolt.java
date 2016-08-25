@@ -43,6 +43,7 @@ public class DeserializationBolt<K> extends BaseRichBolt {
 			OutputCollector collector) {
 		_collector = collector;	
 		_logger = Logger.getLogger(DeserializationBolt.class);
+		JSONable.mapClass(c);
 	}
 
 	public void execute(Tuple input) {
