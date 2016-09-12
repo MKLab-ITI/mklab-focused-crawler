@@ -51,7 +51,6 @@ public class UrlCrawlDeciderBolt extends BaseRichBolt {
 		socialMediaTargets.add("twitpic.com");
 		socialMediaTargets.add("dailymotion.com");
 		socialMediaTargets.add("www.facebook.com");
-		socialMediaTargets.add("twitter.com");
 		
 		this.redisHost = redisHost;
 		this.redisPort = redisPort;
@@ -74,13 +73,16 @@ public class UrlCrawlDeciderBolt extends BaseRichBolt {
 		try {
 			WebPage webPage = (WebPage) input.getValueByField(inputField);
 			if(webPage != null) {
+				String url = webPage.getExpandedUrl();
 				String domain = webPage.getDomain();
 				if(socialMediaTargets.contains(domain)) {
 					_collector.emit("mediaitems", tuple(webPage));
+					_collector.ack(input);	
+				}
+				else if(domain.equals("twitter.com")) {
 					_collector.ack(input);
 				}
 				else {
-					String url = webPage.getExpandedUrl();
 					CRAWL_STATUS crawlStatus = urlStatus.getCrawlStatus(url);
 					if(crawlStatus == null || crawlStatus.equals(CRAWL_STATUS.NEW)) {	
 					

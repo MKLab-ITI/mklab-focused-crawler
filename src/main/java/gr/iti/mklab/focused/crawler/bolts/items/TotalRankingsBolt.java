@@ -1,6 +1,6 @@
 package gr.iti.mklab.focused.crawler.bolts.items;
 
-import gr.iti.mklab.focused.crawler.bolts.tools.Rankings;
+import gr.iti.mklab.focused.crawler.bolts.structures.Rankings;
 
 import org.apache.log4j.Logger;
 import org.apache.storm.tuple.Tuple;
@@ -12,7 +12,7 @@ import org.apache.storm.tuple.Tuple;
  * consolidated ranking. To do so, configure this bolt with a globalGrouping on {@link IntermediateRankingsBolt}.
  * 
  */
-public final class TotalRankingsBolt extends AbstractRankerBolt {
+public final class TotalRankingsBolt extends RankerBolt {
 
     private static final long serialVersionUID = -8447525895532302198L;
     private static final Logger LOG = Logger.getLogger(TotalRankingsBolt.class);

@@ -1,4 +1,4 @@
-package gr.iti.mklab.focused.crawler.bolts.tools;
+package gr.iti.mklab.focused.crawler.bolts.structures;
 
 import java.io.Serializable;
 import java.util.Collections;
@@ -9,6 +9,7 @@ import com.google.common.collect.Lists;
 public class Rankings implements Serializable {
 
     private static final long serialVersionUID = -1549827195410578903L;
+    
     private static final int DEFAULT_COUNT = 10;
 
     private final int maxSize;

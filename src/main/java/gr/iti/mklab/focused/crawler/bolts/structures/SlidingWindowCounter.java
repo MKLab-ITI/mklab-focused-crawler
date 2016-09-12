@@ -1,4 +1,4 @@
-package gr.iti.mklab.focused.crawler.bolts.tools;
+package gr.iti.mklab.focused.crawler.bolts.structures;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -56,6 +56,7 @@ public final class SlidingWindowCounter<T> implements Serializable {
     
     private int headSlot;
     private int tailSlot;
+    
     private int windowLengthInSlots;
 
     public SlidingWindowCounter(int windowLengthInSlots) {

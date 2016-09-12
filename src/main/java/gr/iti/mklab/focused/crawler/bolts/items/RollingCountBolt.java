@@ -1,7 +1,7 @@
 package gr.iti.mklab.focused.crawler.bolts.items;
 
-import gr.iti.mklab.focused.crawler.bolts.tools.NthLastModifiedTimeTracker;
-import gr.iti.mklab.focused.crawler.bolts.tools.SlidingWindowCounter;
+import gr.iti.mklab.focused.crawler.bolts.structures.NthLastModifiedTimeTracker;
+import gr.iti.mklab.focused.crawler.bolts.structures.SlidingWindowCounter;
 import gr.iti.mklab.focused.crawler.utils.TupleHelpers;
 
 import java.util.HashMap;
@@ -53,6 +53,7 @@ public class RollingCountBolt extends BaseRichBolt {
     private final int windowLengthInSeconds;
     private final int emitFrequencyInSeconds;
     private OutputCollector collector;
+    
     private NthLastModifiedTimeTracker lastModifiedTracker;
 
     public RollingCountBolt() {
@@ -62,8 +63,9 @@ public class RollingCountBolt extends BaseRichBolt {
     public RollingCountBolt(int windowLengthInSeconds, int emitFrequencyInSeconds) {
         this.windowLengthInSeconds = windowLengthInSeconds;
         this.emitFrequencyInSeconds = emitFrequencyInSeconds;
-        counter = new SlidingWindowCounter<Object>(deriveNumWindowChunksFrom(this.windowLengthInSeconds,
-            this.emitFrequencyInSeconds));
+        
+        int numWidnowChunks = deriveNumWindowChunksFrom(this.windowLengthInSeconds, this.emitFrequencyInSeconds);
+        counter = new SlidingWindowCounter<Object>(numWidnowChunks);
     }
 
     private int deriveNumWindowChunksFrom(int windowLengthInSeconds, int windowUpdateFrequencyInSeconds) {
@@ -74,8 +76,7 @@ public class RollingCountBolt extends BaseRichBolt {
     @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         this.collector = collector;
-        lastModifiedTracker = new NthLastModifiedTimeTracker(deriveNumWindowChunksFrom(this.windowLengthInSeconds,
-            this.emitFrequencyInSeconds));
+        this.lastModifiedTracker = new NthLastModifiedTimeTracker(deriveNumWindowChunksFrom(this.windowLengthInSeconds, this.emitFrequencyInSeconds));
     }
 
     @Override
@@ -94,9 +95,9 @@ public class RollingCountBolt extends BaseRichBolt {
         int actualWindowLengthInSeconds = lastModifiedTracker.secondsSinceOldestModification();
         lastModifiedTracker.markAsModified();
         if (actualWindowLengthInSeconds != windowLengthInSeconds) {
-            LOG.warn(String.format("Actual window length is %d seconds when it should be %d seconds"
-                    + " (you can safely ignore this warning during the startup phase)", actualWindowLengthInSeconds, windowLengthInSeconds));
+            LOG.warn(String.format("Actual window length is %d seconds when it should be %d seconds (you can safely ignore this warning during the startup phase)", actualWindowLengthInSeconds, windowLengthInSeconds));
         }
+        
         emit(counts, actualWindowLengthInSeconds);
     }
 
@@ -111,6 +112,7 @@ public class RollingCountBolt extends BaseRichBolt {
     private void countObjAndAck(Tuple tuple) {
         Object obj = tuple.getValue(0);
         counter.incrementCount(obj);
+        
         collector.ack(tuple);
     }
 
@@ -125,4 +127,5 @@ public class RollingCountBolt extends BaseRichBolt {
         conf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, emitFrequencyInSeconds);
         return conf;
     }
+    
 }

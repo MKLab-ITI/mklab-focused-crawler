@@ -49,10 +49,47 @@ public class MediaExtractionBolt extends BaseRichBolt {
 	
 	private Map<String, Retriever> retrievers = new HashMap<String, Retriever>();
 
-	private XMLConfiguration config;
+	private Credentials instaCredentials = null;
+	private Credentials yrCredentials = null;
+	private Credentials fbCredentials = null;
+	private Credentials vimeoCredentials = null;
+	private Credentials twpCredentials = null;
+	private Credentials dmCredentials = null;
+	private Credentials flickrCredentials = null;
 	
 	public MediaExtractionBolt(XMLConfiguration config) {
-		this.config = config;
+		
+		String instaAccessToken = config.getString("mediaextractor.instagram.accesstoken");
+		String instaAccessTokenSecret = config.getString("mediaextractor.instagram.accesstokensecret");
+		if(instaAccessToken != null && instaAccessTokenSecret != null) {
+			this.instaCredentials  = new Credentials();
+			instaCredentials.setClientId(instaAccessToken);
+			instaCredentials.setKey(instaAccessTokenSecret);
+		}
+		
+		String ytKey = config.getString("mediaextractor.youtube.key");
+		if(ytKey != null) {
+			this.yrCredentials  = new Credentials();
+			yrCredentials.setKey(ytKey);
+		}
+		
+		this.vimeoCredentials = new Credentials();
+		this.twpCredentials = new Credentials();
+		this.dmCredentials = new Credentials();
+		
+		String fbAccessToken = config.getString("mediaextractor.facebook.accesstoken");
+		if(fbAccessToken != null) {
+			this.fbCredentials = new Credentials();
+			fbCredentials.setAccessToken(fbAccessToken);
+		}
+		
+		String flickrKey = config.getString("mediaextractor.flickr.key");
+		String flickrSecret = config.getString("mediaextractor.flickr.secret");
+		if(flickrKey != null && flickrSecret != null) {
+			this.flickrCredentials  = new Credentials();
+			flickrCredentials.setKey(flickrKey);
+			flickrCredentials.setSecret(flickrSecret);
+		}
 	}
 	
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
@@ -64,47 +101,32 @@ public class MediaExtractionBolt extends BaseRichBolt {
 		
 		_collector = collector;  		
 		_logger = Logger.getLogger(MediaExtractionBolt.class);
-		
-		
-		String instaAccessToken = config.getString("mediaextractor.instagram.accesstoken");
-		String instaAccessTokenSecret = config.getString("mediaextractor.instagram.accesstokensecret");
-		if(instaAccessToken != null && instaAccessTokenSecret != null) {
-			Credentials instaCredentials = new Credentials();
-			instaCredentials.setClientId(instaAccessToken);
-			instaCredentials.setKey(instaAccessTokenSecret);
+
+		if(instaCredentials != null) {
 			retrievers.put("instagram", new InstagramRetriever(instaCredentials));
 		}
 		
-		String ytKey = config.getString("mediaextractor.youtube.key");
-		if(ytKey != null) {
-			Credentials yrCredentials = new Credentials();
-			yrCredentials.setKey(ytKey);
+		if(yrCredentials != null) {
 			retrievers.put("youtube", new YoutubeRetriever(yrCredentials));
 		}
 		
-		Credentials vimeoCredentials = new Credentials();
-		retrievers.put("vimeo", new VimeoRetriever(vimeoCredentials));
-		
-		Credentials twpCredentials = new Credentials();
-		retrievers.put("twitpic", new TwitpicRetriever(twpCredentials));
-		
-		Credentials dmCredentials = new Credentials();
-		retrievers.put("dailymotion", new DailyMotionRetriever(dmCredentials));
-		
-		String fbAccessToken = config.getString("mediaextractor.facebook.accesstoken");
-		if(fbAccessToken != null) {
-			Credentials fbCredentials = new Credentials();
-			fbCredentials.setAccessToken(fbAccessToken);
+		if(fbCredentials != null) {
 			retrievers.put("facebook", new FacebookRetriever(fbCredentials));
 		}
 		
+		if(vimeoCredentials != null) {
+			retrievers.put("vimeo", new VimeoRetriever(vimeoCredentials));
+		}
 		
-		String flickrKey = config.getString("mediaextractor.flickr.key");
-		String flickrSecret = config.getString("mediaextractor.flickr.secret");
-		if(flickrKey != null && flickrSecret != null) {
-			Credentials flickrCredentials = new Credentials();
-			flickrCredentials.setKey(flickrKey);
-			flickrCredentials.setSecret(flickrSecret);
+		if(twpCredentials != null) {
+			retrievers.put("twitpic", new TwitpicRetriever(twpCredentials));
+		}
+		
+		if(dmCredentials != null) {
+			retrievers.put("dailymotion", new DailyMotionRetriever(dmCredentials));
+		}
+		
+		if(flickrCredentials != null) {
 			retrievers.put("flickr", new FlickrRetriever(flickrCredentials));
 		}
 		

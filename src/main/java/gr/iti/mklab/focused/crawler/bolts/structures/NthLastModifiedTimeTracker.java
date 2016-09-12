@@ -1,4 +1,4 @@
-package gr.iti.mklab.focused.crawler.bolts.tools;
+package gr.iti.mklab.focused.crawler.bolts.structures;
 
 import org.apache.commons.collections.buffer.CircularFifoBuffer;
 import org.apache.storm.utils.Time;

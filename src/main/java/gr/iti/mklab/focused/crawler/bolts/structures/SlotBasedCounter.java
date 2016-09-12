@@ -1,4 +1,4 @@
-package gr.iti.mklab.focused.crawler.bolts.tools;
+package gr.iti.mklab.focused.crawler.bolts.structures;
 
 import java.io.Serializable;
 import java.util.HashMap;

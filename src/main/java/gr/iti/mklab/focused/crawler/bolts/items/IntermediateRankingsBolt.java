@@ -1,7 +1,7 @@
 package gr.iti.mklab.focused.crawler.bolts.items;
 
-import gr.iti.mklab.focused.crawler.bolts.tools.Rankable;
-import gr.iti.mklab.focused.crawler.bolts.tools.RankableObjectWithFields;
+import gr.iti.mklab.focused.crawler.bolts.structures.Rankable;
+import gr.iti.mklab.focused.crawler.bolts.structures.RankableObjectWithFields;
 
 import org.apache.log4j.Logger;
 import org.apache.storm.tuple.Tuple;
@@ -14,7 +14,7 @@ import org.apache.storm.tuple.Tuple;
  * additionalField2, ..., additionalFieldN).
  * 
  */
-public final class IntermediateRankingsBolt extends AbstractRankerBolt {
+public final class IntermediateRankingsBolt extends RankerBolt {
 
     private static final long serialVersionUID = -1369800530256637409L;
     private static final Logger LOG = Logger.getLogger(IntermediateRankingsBolt.class);

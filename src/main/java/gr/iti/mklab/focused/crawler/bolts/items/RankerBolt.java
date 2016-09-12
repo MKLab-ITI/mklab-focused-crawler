@@ -1,6 +1,6 @@
 package gr.iti.mklab.focused.crawler.bolts.items;
 
-import gr.iti.mklab.focused.crawler.bolts.tools.Rankings;
+import gr.iti.mklab.focused.crawler.bolts.structures.Rankings;
 import gr.iti.mklab.focused.crawler.utils.TupleHelpers;
 
 import java.util.HashMap;
@@ -19,12 +19,12 @@ import org.apache.storm.tuple.Values;
 /**
  * This abstract bolt provides the basic behavior of bolts that rank objects according to their count.
  * 
- * It uses a template method design pattern for {@link AbstractRankerBolt#execute(Tuple, BasicOutputCollector)} to allow
+ * It uses a template method design pattern for {@link RankerBolt#execute(Tuple, BasicOutputCollector)} to allow
  * actual bolt implementations to specify how incoming tuples are processed, i.e. how the objects embedded within those
  * tuples are retrieved and counted.
  * 
  */
-public abstract class AbstractRankerBolt extends BaseBasicBolt {
+public abstract class RankerBolt extends BaseBasicBolt {
 
     private static final long serialVersionUID = 4931640198501530202L;
     private static final int DEFAULT_EMIT_FREQUENCY_IN_SECONDS = 2;
@@ -32,17 +32,18 @@ public abstract class AbstractRankerBolt extends BaseBasicBolt {
 
     private final int emitFrequencyInSeconds;
     private final int count;
+    
     private final Rankings rankings;
 
-    public AbstractRankerBolt() {
+    public RankerBolt() {
         this(DEFAULT_COUNT, DEFAULT_EMIT_FREQUENCY_IN_SECONDS);
     }
 
-    public AbstractRankerBolt(int topN) {
+    public RankerBolt(int topN) {
         this(topN, DEFAULT_EMIT_FREQUENCY_IN_SECONDS);
     }
 
-    public AbstractRankerBolt(int topN, int emitFrequencyInSeconds) {
+    public RankerBolt(int topN, int emitFrequencyInSeconds) {
         if (topN < 1) {
             throw new IllegalArgumentException("topN must be >= 1 (you requested " + topN + ")");
         }
@@ -50,9 +51,10 @@ public abstract class AbstractRankerBolt extends BaseBasicBolt {
             throw new IllegalArgumentException("The emit frequency must be >= 1 seconds (you requested "
                 + emitFrequencyInSeconds + " seconds)");
         }
-        count = topN;
+        
+        this.count = topN;
         this.emitFrequencyInSeconds = emitFrequencyInSeconds;
-        rankings = new Rankings(count);
+        this.rankings = new Rankings(count);
     }
 
     protected Rankings getRankings() {
