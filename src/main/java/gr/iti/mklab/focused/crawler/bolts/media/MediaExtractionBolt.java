@@ -149,12 +149,12 @@ public class MediaExtractionBolt extends BaseRichBolt {
 				webPage.setMediaIds(mediaIds);
 				mediaItem.setReference(webPage.getReference());
 				
-				_collector.emit(tuple(mediaItem));	
+				_collector.emit(input, tuple(mediaItem));	
 				_collector.ack(input);		
 			}
 			else {
 				_logger.error(webPage.getExpandedUrl() + " failed due to null media item");
-				_collector.fail(input);	
+				_collector.ack(input);	
 			}
 			
 		} catch (Exception e) {

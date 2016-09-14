@@ -76,7 +76,7 @@ public class UrlCrawlDeciderBolt extends BaseRichBolt {
 				String url = webPage.getExpandedUrl();
 				String domain = webPage.getDomain();
 				if(socialMediaTargets.contains(domain)) {
-					_collector.emit("mediaitems", tuple(webPage));
+					_collector.emit("mediaitems", input, tuple(webPage));
 					_collector.ack(input);	
 				}
 				else if(domain.equals("twitter.com")) {

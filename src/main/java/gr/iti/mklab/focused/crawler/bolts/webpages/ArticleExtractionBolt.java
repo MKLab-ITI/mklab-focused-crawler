@@ -96,7 +96,7 @@ public class ArticleExtractionBolt extends BaseRichBolt {
 					if(parsed) { 
 						_collector.emit(WEBPAGE_STREAM, input, tuple(webPage));
 						for(MediaItem mediaItem : mediaItems) {
-							_collector.emit(MEDIA_STREAM, tuple(mediaItem));
+							_collector.emit(MEDIA_STREAM, input, tuple(mediaItem));
 						}
 						_collector.ack(input);
 					}
