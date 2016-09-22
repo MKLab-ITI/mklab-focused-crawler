@@ -56,7 +56,7 @@ public class WordExtractorBolt extends BaseRichBolt {
 		}
 		
 		for(String word : words) {
-			_collector.emit(new Values(word));
+			_collector.emit(input, new Values(word));
 		}
 		_collector.ack(input);
 	}

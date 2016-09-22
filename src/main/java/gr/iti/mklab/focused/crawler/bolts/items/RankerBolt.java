@@ -3,14 +3,18 @@ package gr.iti.mklab.focused.crawler.bolts.items;
 import gr.iti.mklab.focused.crawler.bolts.structures.Rankings;
 import gr.iti.mklab.focused.crawler.utils.TupleHelpers;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.apache.storm.Config;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.BasicOutputCollector;
 import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.topology.base.BaseBasicBolt;
+import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
@@ -24,7 +28,7 @@ import org.apache.storm.tuple.Values;
  * tuples are retrieved and counted.
  * 
  */
-public abstract class RankerBolt extends BaseBasicBolt {
+public abstract class RankerBolt extends BaseRichBolt {
 
     private static final long serialVersionUID = 4931640198501530202L;
     private static final int DEFAULT_EMIT_FREQUENCY_IN_SECONDS = 2;
@@ -35,6 +39,9 @@ public abstract class RankerBolt extends BaseBasicBolt {
     
     private final Rankings rankings;
 
+    private List<Tuple> anchors = new ArrayList<Tuple>();
+	private OutputCollector collector;
+    
     public RankerBolt() {
         this(DEFAULT_COUNT, DEFAULT_EMIT_FREQUENCY_IN_SECONDS);
     }
@@ -55,8 +62,15 @@ public abstract class RankerBolt extends BaseBasicBolt {
         this.count = topN;
         this.emitFrequencyInSeconds = emitFrequencyInSeconds;
         this.rankings = new Rankings(count);
+        
     }
 
+    @SuppressWarnings("rawtypes")
+    @Override
+    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+    	this.collector = collector;
+    }
+    
     protected Rankings getRankings() {
         return rankings;
     }
@@ -65,20 +79,23 @@ public abstract class RankerBolt extends BaseBasicBolt {
      * This method functions as a template method (design pattern).
      */
     @Override
-    public final void execute(Tuple tuple, BasicOutputCollector collector) {
+    public final void execute(Tuple tuple) {
         if (TupleHelpers.isTickTuple(tuple)) {
             getLogger().info("Received tick tuple, triggering emit of current rankings");
-            emitRankings(collector);
+            emitRankings();
         }
         else {
+        	anchors.add(tuple);
             updateRankingsWithTuple(tuple);
         }
     }
 
     abstract void updateRankingsWithTuple(Tuple tuple);
 
-    private void emitRankings(BasicOutputCollector collector) {
-        collector.emit(new Values(rankings));
+    private void emitRankings() {
+        collector.emit(anchors, new Values(rankings));
+        anchors.clear();
+        
         getLogger().info("Rankings: " + rankings);
     }
 

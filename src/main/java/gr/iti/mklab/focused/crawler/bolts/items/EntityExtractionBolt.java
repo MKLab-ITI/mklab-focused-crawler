@@ -60,23 +60,24 @@ public class EntityExtractionBolt extends BaseRichBolt {
 	}
 
 	public void execute(Tuple input) {
+		Item item = (Item)input.getValueByField("Item");
 		try {
-			Item item = (Item)input.getValueByField("Item");
-			if(item == null)
+			if(item == null) {
 				return;
+			}
 			
 			String title = item.getTitle();
 			if(title != null) {
 				List<NamedEntity> entities = extract(title);
 				item.setEntities(entities);
 			}
-			_collector.emit(new Values(item));
-			_collector.ack(input);
 		}
 		catch(Exception e) {
 			_logger.error(e);
-			_collector.fail(input);
 		}
+		
+		_collector.emit(input, new Values(item));
+		_collector.ack(input);
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {

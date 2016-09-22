@@ -2,9 +2,11 @@ package gr.iti.mklab.focused.crawler.bolts.items;
 
 import gr.iti.mklab.focused.crawler.bolts.structures.NthLastModifiedTimeTracker;
 import gr.iti.mklab.focused.crawler.bolts.structures.SlidingWindowCounter;
+import gr.iti.mklab.focused.crawler.utils.AnchorsTracker;
 import gr.iti.mklab.focused.crawler.utils.TupleHelpers;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -50,6 +52,8 @@ public class RollingCountBolt extends BaseRichBolt {
     private static final int DEFAULT_EMIT_FREQUENCY_IN_SECONDS = DEFAULT_SLIDING_WINDOW_IN_SECONDS / NUM_WINDOW_CHUNKS;
 
     private final SlidingWindowCounter<Object> counter;
+    private final AnchorsTracker<Object> anchorsTracker; 
+    
     private final int windowLengthInSeconds;
     private final int emitFrequencyInSeconds;
     private OutputCollector collector;
@@ -66,6 +70,8 @@ public class RollingCountBolt extends BaseRichBolt {
         
         int numWidnowChunks = deriveNumWindowChunksFrom(this.windowLengthInSeconds, this.emitFrequencyInSeconds);
         counter = new SlidingWindowCounter<Object>(numWidnowChunks);
+        
+        anchorsTracker = new AnchorsTracker<Object>();
     }
 
     private int deriveNumWindowChunksFrom(int windowLengthInSeconds, int windowUpdateFrequencyInSeconds) {
@@ -98,20 +104,30 @@ public class RollingCountBolt extends BaseRichBolt {
             LOG.warn(String.format("Actual window length is %d seconds when it should be %d seconds (you can safely ignore this warning during the startup phase)", actualWindowLengthInSeconds, windowLengthInSeconds));
         }
         
-        emit(counts, actualWindowLengthInSeconds);
+        Map<Object, List<Tuple>> anchorsPerObject = anchorsTracker.getAnchorsThenReset();
+        
+        emit(counts, anchorsPerObject, actualWindowLengthInSeconds);
     }
 
-    private void emit(Map<Object, Long> counts, int actualWindowLengthInSeconds) {
+    private void emit(Map<Object, Long> counts, Map<Object, List<Tuple>> anchorsPerObject, int actualWindowLengthInSeconds) {
         for (Entry<Object, Long> entry : counts.entrySet()) {
             Object obj = entry.getKey();
             Long count = entry.getValue();
-            collector.emit(new Values(obj, count, actualWindowLengthInSeconds));
+            
+            List<Tuple> anchors = anchorsPerObject.get(obj);
+            if(anchors != null) {
+            	collector.emit(anchors, new Values(obj, count, actualWindowLengthInSeconds));
+            }
+            else {
+            	collector.emit(new Values(obj, count, actualWindowLengthInSeconds));
+            }
         }
     }
 
     private void countObjAndAck(Tuple tuple) {
         Object obj = tuple.getValue(0);
         counter.incrementCount(obj);
+        anchorsTracker.addTuple(obj, tuple);
         
         collector.ack(tuple);
     }
