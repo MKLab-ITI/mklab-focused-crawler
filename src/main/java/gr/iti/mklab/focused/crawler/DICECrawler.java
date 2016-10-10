@@ -20,9 +20,9 @@ import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 
 import gr.iti.mklab.focused.crawler.bolts.DeserializationBolt;
+import gr.iti.mklab.focused.crawler.bolts.SolrBolt;
 import gr.iti.mklab.focused.crawler.bolts.media.MediaExtractionBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.ArticleExtractionBolt;
-import gr.iti.mklab.focused.crawler.bolts.webpages.SolrBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.URLExpansionBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.UrlCrawlDeciderBolt;
 import gr.iti.mklab.focused.crawler.bolts.webpages.WebPageFetcherBolt;

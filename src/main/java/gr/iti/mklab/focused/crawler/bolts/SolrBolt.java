@@ -1,4 +1,4 @@
-package gr.iti.mklab.focused.crawler.bolts.webpages;
+package gr.iti.mklab.focused.crawler.bolts;
 
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -36,7 +36,6 @@ public class SolrBolt extends BaseRichBolt {
     private SolrClient solrClient;
     private OutputCollector collector;
     private List<Tuple> toCommitTuples;
-    private int tickTupleInterval = DEFAULT_TICK_TUPLE_INTERVAL_SECS;
 
 	private String collection;
 
@@ -135,7 +134,7 @@ public class SolrBolt extends BaseRichBolt {
 
     @Override
     public Map<String, Object> getComponentConfiguration() {
-        return TupleUtils.putTickFrequencyIntoComponentConfig(super.getComponentConfiguration(), tickTupleInterval);
+        return TupleUtils.putTickFrequencyIntoComponentConfig(super.getComponentConfiguration(), DEFAULT_TICK_TUPLE_INTERVAL_SECS);
     }
 
     @Override

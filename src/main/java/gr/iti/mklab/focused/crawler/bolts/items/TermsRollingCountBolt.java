@@ -41,11 +41,11 @@ import org.apache.storm.tuple.Values;
  * during the first ~ five minutes of startup time if the window length is set to five minutes).
  * 
  */
-public class RollingCountBolt extends BaseRichBolt {
+public class TermsRollingCountBolt extends BaseRichBolt {
 
     private static final long serialVersionUID = 5537727428628598519L;
     
-    private static final Logger LOG = Logger.getLogger(RollingCountBolt.class);
+    private static final Logger LOG = Logger.getLogger(TermsRollingCountBolt.class);
     
     private static final int NUM_WINDOW_CHUNKS = 5;
     private static final int DEFAULT_SLIDING_WINDOW_IN_SECONDS = NUM_WINDOW_CHUNKS * 60;
@@ -56,19 +56,21 @@ public class RollingCountBolt extends BaseRichBolt {
     
     private final int windowLengthInSeconds;
     private final int emitFrequencyInSeconds;
+    private final int numWidnowChunks;
+    
     private OutputCollector collector;
     
     private NthLastModifiedTimeTracker lastModifiedTracker;
 
-    public RollingCountBolt() {
+    public TermsRollingCountBolt() {
         this(DEFAULT_SLIDING_WINDOW_IN_SECONDS, DEFAULT_EMIT_FREQUENCY_IN_SECONDS);
     }
 
-    public RollingCountBolt(int windowLengthInSeconds, int emitFrequencyInSeconds) {
+    public TermsRollingCountBolt(int windowLengthInSeconds, int emitFrequencyInSeconds) {
         this.windowLengthInSeconds = windowLengthInSeconds;
         this.emitFrequencyInSeconds = emitFrequencyInSeconds;
         
-        int numWidnowChunks = deriveNumWindowChunksFrom(this.windowLengthInSeconds, this.emitFrequencyInSeconds);
+        this.numWidnowChunks = deriveNumWindowChunksFrom(this.windowLengthInSeconds, this.emitFrequencyInSeconds);
         counter = new SlidingWindowCounter<Object>(numWidnowChunks);
         
         anchorsTracker = new AnchorsTracker<Object>();
@@ -97,6 +99,8 @@ public class RollingCountBolt extends BaseRichBolt {
     }
 
     private void emitCurrentWindowCounts() {
+    	
+    	Map<Object, Long> currentCounts = counter.getCurrentCounts();
         Map<Object, Long> counts = counter.getCountsThenAdvanceWindow();
         int actualWindowLengthInSeconds = lastModifiedTracker.secondsSinceOldestModification();
         lastModifiedTracker.markAsModified();
@@ -105,21 +109,25 @@ public class RollingCountBolt extends BaseRichBolt {
         }
         
         Map<Object, List<Tuple>> anchorsPerObject = anchorsTracker.getAnchorsThenReset();
-        
-        emit(counts, anchorsPerObject, actualWindowLengthInSeconds);
+        emit(counts, currentCounts, anchorsPerObject, actualWindowLengthInSeconds);
     }
 
-    private void emit(Map<Object, Long> counts, Map<Object, List<Tuple>> anchorsPerObject, int actualWindowLengthInSeconds) {
+    private void emit(Map<Object, Long> counts, Map<Object, Long> currentCounts, Map<Object, List<Tuple>> anchorsPerObject, int actualWindowLengthInSeconds) {
         for (Entry<Object, Long> entry : counts.entrySet()) {
             Object obj = entry.getKey();
             Long count = entry.getValue();
+            Long currentCount = currentCounts.get(obj);
+            
+            Long avgCount = Math.abs(count - currentCount) / (numWidnowChunks - 1);
+            
+            double chiSquare = Math.pow((currentCount - avgCount), 2) / (double) (avgCount + 1);
             
             List<Tuple> anchors = anchorsPerObject.get(obj);
             if(anchors != null) {
-            	collector.emit(anchors, new Values(obj, count, actualWindowLengthInSeconds));
+            	collector.emit(anchors, new Values(obj, count, chiSquare, actualWindowLengthInSeconds));
             }
             else {
-            	collector.emit(new Values(obj, count, actualWindowLengthInSeconds));
+            	collector.emit(new Values(obj, count, chiSquare, actualWindowLengthInSeconds));
             }
         }
     }
@@ -134,7 +142,7 @@ public class RollingCountBolt extends BaseRichBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("obj", "count", "actualWindowLengthInSeconds"));
+        declarer.declare(new Fields("obj", "count", "chiSquare", "actualWindowLengthInSeconds"));
     }
 
     @Override

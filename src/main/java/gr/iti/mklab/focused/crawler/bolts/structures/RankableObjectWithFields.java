@@ -3,6 +3,7 @@ package gr.iti.mklab.focused.crawler.bolts.structures;
 import java.util.List;
 
 import org.apache.storm.tuple.Tuple;
+import org.bson.Document;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -18,7 +19,8 @@ public class RankableObjectWithFields implements Rankable {
     private static final String toStringSeparator = "|";
 
     private final Object obj;
-    private final long count;
+    private final long value;
+    
     private final ImmutableList<Object> fields;
 
     public RankableObjectWithFields(Object obj, long count, Object... otherFields) {
@@ -29,7 +31,7 @@ public class RankableObjectWithFields implements Rankable {
             throw new IllegalArgumentException("The count must be >= 0");
         }
         this.obj = obj;
-        this.count = count;
+        this.value = count;
         fields = ImmutableList.copyOf(otherFields);
 
     }
@@ -55,8 +57,8 @@ public class RankableObjectWithFields implements Rankable {
         return obj;
     }
 
-    public long getCount() {
-        return count;
+    public long getValue() {
+        return value;
     }
 
     /**
@@ -68,7 +70,7 @@ public class RankableObjectWithFields implements Rankable {
 
     @Override
     public int compareTo(Rankable other) {
-        long delta = this.getCount() - other.getCount();
+        long delta = this.getValue() - other.getValue();
         if (delta > 0) {
             return 1;
         }
@@ -89,13 +91,13 @@ public class RankableObjectWithFields implements Rankable {
             return false;
         }
         RankableObjectWithFields other = (RankableObjectWithFields) o;
-        return obj.equals(other.obj) && count == other.count;
+        return obj.equals(other.obj) && value == other.value;
     }
 
     @Override
     public int hashCode() {
         int result = 17;
-        int countHash = (int) (count ^ (count >>> 32));
+        int countHash = (int) (value ^ (value >>> 32));
         result = 31 * result + countHash;
         result = 31 * result + obj.hashCode();
         return result;
@@ -106,7 +108,7 @@ public class RankableObjectWithFields implements Rankable {
         buf.append("[");
         buf.append(obj);
         buf.append(toStringSeparator);
-        buf.append(count);
+        buf.append(value);
         for (Object field : fields) {
             buf.append(toStringSeparator);
             buf.append(field);
@@ -114,4 +116,14 @@ public class RankableObjectWithFields implements Rankable {
         buf.append("]");
         return buf.toString();
     }
+
+	@Override
+	public Document toDocument() {
+		Document document = new Document();
+		document.append("term", obj);
+		document.append("value", value);
+		document.append("fields", getFields());
+		
+		return document;
+	}
 }

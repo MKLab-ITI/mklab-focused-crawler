@@ -84,12 +84,17 @@ public final class SlidingWindowCounter<T> implements Serializable {
      * @return
      */
     public Map<T, Long> getCountsThenAdvanceWindow() {
-        Map<T, Long> counts = objCounter.getCounts();
+        Map<T, Long> counts = objCounter.getTotalCounts();
         objCounter.wipeSlot(tailSlot);
         advanceHead();
         return counts;
     }
-
+    
+    public Map<T, Long> getCurrentCounts() {
+        Map<T, Long> counts = objCounter.getCounts(headSlot);
+        return counts;
+    }
+    
     private void advanceHead() {
         headSlot = tailSlot;
         tailSlot = slotAfter(tailSlot);

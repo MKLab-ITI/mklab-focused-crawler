@@ -42,6 +42,8 @@ public abstract class RankerBolt extends BaseRichBolt {
     private List<Tuple> anchors = new ArrayList<Tuple>();
 	private OutputCollector collector;
     
+	private boolean change = false;
+	
     public RankerBolt() {
         this(DEFAULT_COUNT, DEFAULT_EMIT_FREQUENCY_IN_SECONDS);
     }
@@ -82,11 +84,17 @@ public abstract class RankerBolt extends BaseRichBolt {
     public final void execute(Tuple tuple) {
         if (TupleHelpers.isTickTuple(tuple)) {
             getLogger().info("Received tick tuple, triggering emit of current rankings");
-            emitRankings();
+            if(change) {
+            	emitRankings();
+            	change = false;
+            } else {
+            	getLogger().info("Nothing has been changed. Cannot emit yet.");
+            }
         }
         else {
         	anchors.add(tuple);
             updateRankingsWithTuple(tuple);
+            change = true;
         }
     }
 

@@ -18,8 +18,11 @@ import org.w3c.dom.NodeList;
 import edu.stanford.nlp.ie.AbstractSequenceClassifier;
 import edu.stanford.nlp.ie.crf.CRFClassifier;
 import edu.stanford.nlp.ling.CoreLabel;
+import edu.stanford.nlp.util.logging.Redwood;
+import edu.stanford.nlp.util.logging.StanfordRedwoodConfiguration;
 import gr.iti.mklab.framework.common.domain.Item;
 import gr.iti.mklab.framework.common.domain.NamedEntity;
+
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -35,10 +38,16 @@ public class EntityExtractionBolt extends BaseRichBolt {
 	private OutputCollector _collector;
 	private Logger _logger;
 
-	private String _serializedClassifier;
+	private String _serializedClassifier = "edu/stanford/nlp/models/ner/english.all.3class.distsim.crf.ser.gz";
 	private AbstractSequenceClassifier<CoreLabel> _classifier = null;
-			
+		
+	public EntityExtractionBolt() {
+		StanfordRedwoodConfiguration.setup();
+		Redwood.hideAllChannels();
+	}
+	
 	public EntityExtractionBolt(String serializedClassifier) {
+		this();
 		this._serializedClassifier = serializedClassifier;
 	}
 	
@@ -51,10 +60,13 @@ public class EntityExtractionBolt extends BaseRichBolt {
 	    try {
 			_classifier = CRFClassifier.getClassifier(_serializedClassifier);
 	    } catch (ClassCastException e) {
+	    	e.printStackTrace();
 			_logger.error(e);
 		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
 			_logger.error(e);
 		} catch (IOException e) {
+			e.printStackTrace();
 			_logger.error(e);
 		}   
 	}
@@ -73,6 +85,7 @@ public class EntityExtractionBolt extends BaseRichBolt {
 			}
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			_logger.error(e);
 		}
 		

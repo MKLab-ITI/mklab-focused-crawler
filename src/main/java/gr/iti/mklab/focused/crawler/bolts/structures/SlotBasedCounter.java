@@ -23,6 +23,7 @@ public final class SlotBasedCounter<T> implements Serializable {
         if (numSlots <= 0) {
             throw new IllegalArgumentException("Number of slots must be greater than zero (you requested " + numSlots+ ")");
         }
+        
         this.numSlots = numSlots;
     }
 
@@ -45,7 +46,21 @@ public final class SlotBasedCounter<T> implements Serializable {
         }
     }
 
-    public Map<T, Long> getCounts() {
+    public Map<T, Long> getCounts(int slot) {
+        Map<T, Long> result = new HashMap<T, Long>();
+        for (T obj : objToCounts.keySet()) {
+        	long[] counts = objToCounts.get(obj);
+        	if (counts == null || counts.length <= slot) {
+                result.put(obj, 0L);
+            }
+            else {
+            	 result.put(obj, counts[slot]);
+            }
+        }
+        return result;
+    }
+    
+    public Map<T, Long> getTotalCounts() {
         Map<T, Long> result = new HashMap<T, Long>();
         for (T obj : objToCounts.keySet()) {
             result.put(obj, computeTotalCount(obj));

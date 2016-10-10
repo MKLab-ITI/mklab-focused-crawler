@@ -40,7 +40,7 @@ public class RedisSpout extends BaseRichSpout {
 
 	private String outputField;
 
-	private long failed = 0, ack = 0, send = 0, received;
+	private long failed = 0, ack = 0, send = 0, received = 0;
 
 	private UrlStatusMonitor urlStatus;
 	

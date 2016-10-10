@@ -7,17 +7,18 @@
     </redis>
 
     <mongodb>
-        <hostname>160.40.50.207</hostname>
+        <hostname>127.0.0.1</hostname>
         <db>dice</db>
         <collection>topics</collection>
     </mongodb>
     
     <textindex>
-        <host>188.214.128.152</host>
+        <host>127.0.0.1</host>
         <port>8983</port>port>
         <collections>
         	<webpages>WebPages</webpages>
         	<media>MediaItems</media>
+        	<items>Items</items>
         </collections>
     </textindex>
   
@@ -39,7 +40,7 @@
     </mediaextractor>
     
     <topology>
-        <focusedCrawlerName>DiceFocusedCrawler</focusedCrawlerName>
+        <focusedCrawlerName>DiceTopicDetector</focusedCrawlerName>
         <local>true</local>
         <workers>1</workers>
     </topology>
