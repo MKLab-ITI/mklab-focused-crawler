@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="ISO-8859-1" ?>
 <configuration>
 
+    <twitter>
+        <consumerKey></consumerKey>
+        <consumerSecret></consumerSecret>
+        <accessToken></accessToken>
+        <accessTokenSecret></accessTokenSecret>
+    </twitter>
+    
     <redis>
         <hostname>127.0.0.1</hostname>
         <webPagesChannel>DiceWebPages</webPagesChannel>

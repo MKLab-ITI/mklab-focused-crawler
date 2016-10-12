@@ -41,7 +41,7 @@ public class TrendingTopicsDetector {
 	private static final int EMIT_FREQUENCY = 5 * 60;
     private static final int TOP_N = 20;
 
-	private static boolean LOCAL = true;
+
 	
     private static StormTopology createTopology(XMLConfiguration config) throws InterruptedException {
     	
@@ -61,10 +61,10 @@ public class TrendingTopicsDetector {
 		int redisPort = config.getInt("redis.port", 6379);		
 		String redisChannel = config.getString("redis.itemsChannel", "items");
 		
-		String consumerKey = ""; 
-		String consumerSecret = "";
-		String accessToken = "";
-		String accessTokenSecret = "";
+		String consumerKey = config.getString("twitter.consumerKey", "");
+		String consumerSecret = config.getString("twitter.consumerSecret", "");
+		String accessToken = config.getString("twitter.accessToken", "");
+		String accessTokenSecret = config.getString("twitter.accessTokenSecret", "");
 		
 		String mongodbHost = config.getString("mongodb.hostname", "160.40.50.207");
 		String mongodbDatabase = config.getString("mongodb.db", "dice");		
@@ -125,7 +125,8 @@ public class TrendingTopicsDetector {
     	
         StormTopology topology = createTopology(config);
         
-    	if(!LOCAL) {
+        Boolean local = config.getBoolean("topology.local", false);
+    	if(!local) {
 			try {
 				StormSubmitter.submitTopology("DiceTopicDetection", topologyConfig, topology);
 			}
