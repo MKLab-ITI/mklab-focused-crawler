@@ -16,6 +16,7 @@ import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
+import java.nio.charset.Charset;
 
 public class MinHash {
 
@@ -401,7 +402,7 @@ public class MinHash {
 	        while (input.incrementToken()) {
 	            final String term = charTermAttribute.toString();
 	            for (int i = 0; i < functionsSize; i++) {
-	            	final HashCode hashCode = hashFunctions[i].hashString(term);
+	            	final HashCode hashCode = hashFunctions[i].hashString(term, Charset.forName("UTF-8"));
 	                final long value = hashCode.asLong();
 	                if (value < minHashValues[i]) {
 	                    minHashValues[i] = value;
