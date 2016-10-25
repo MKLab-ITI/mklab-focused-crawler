@@ -104,15 +104,17 @@ public class TrendingTopicsDetector {
 
     public static void main(String[] args) throws Exception {
     	
+        String topologyName = args.length == 1 ? args[0] : "DiceTopicDetection";
+        
     	XMLConfiguration config;
 		try {
-			if(args.length == 1)
-				config = new XMLConfiguration(args[0]);
-			else {
+//			if(args.length == 1)
+//				config = new XMLConfiguration(args[0]);
+//			else {
 				ClassLoader classLoader = TrendingTopicsDetector.class.getClassLoader();
 				config = new XMLConfiguration();
                                 config.load(classLoader.getResourceAsStream("dice.topic-detector.xml"));
-			}
+//			}
 		}
 		catch(ConfigurationException ex) {
 			ex.printStackTrace();
@@ -128,21 +130,15 @@ public class TrendingTopicsDetector {
         Boolean local = config.getBoolean("topology.local", false);
     	if(!local) {
 			try {
-				StormSubmitter.submitTopology("DiceTopicDetection", topologyConfig, topology);
+				StormSubmitter.submitTopology(topologyName, topologyConfig, topology);
 			}
-			catch(NumberFormatException e) {
-				e.printStackTrace();
-			} catch (AlreadyAliveException e) {
-				e.printStackTrace();
-			} catch (InvalidTopologyException e) {
-				e.printStackTrace();
-			} catch (AuthorizationException e) {
+			catch(NumberFormatException | AlreadyAliveException | InvalidTopologyException | AuthorizationException e) {
 				e.printStackTrace();
 			}
 			
 		} else {
 			LocalCluster cluster = new LocalCluster();
-			cluster.submitTopology("DiceTopicDetection", topologyConfig, topology);
+			cluster.submitTopology(topologyName, topologyConfig, topology);
 		}
     	
     }
