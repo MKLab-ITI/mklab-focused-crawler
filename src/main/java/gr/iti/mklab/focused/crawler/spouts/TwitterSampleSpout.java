@@ -3,7 +3,10 @@ import gr.iti.mklab.framework.abstractions.socialmedia.items.TwitterItem;
 import gr.iti.mklab.framework.common.domain.Item;
 
 import java.util.Map;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 import org.apache.storm.Config;
@@ -32,7 +35,7 @@ public class TwitterSampleSpout extends BaseRichSpout {
 	 */
 	private static final long serialVersionUID = 5781934512217875334L;
 
-	private long failed = 0, ack = 0, send = 0, received = 0;
+	private long failed = 0, ack = 0, send = 0, received = 0, start = 0;
 	
 	private SpoutOutputCollector _collector;
 	private LinkedBlockingQueue<Item> _queue = null;
@@ -71,8 +74,8 @@ public class TwitterSampleSpout extends BaseRichSpout {
 		StatusListener listener = new StatusListener() {
 			@Override
             public void onStatus(Status status) {
-				received++;
 				if(status.getLang().equals("en")) {
+                                    received++;
 					Item item = new TwitterItem(status);
 					_queue.offer(item);
 				}
@@ -104,7 +107,7 @@ public class TwitterSampleSpout extends BaseRichSpout {
 					
          _twitterStream = new TwitterStreamFactory(cb.build()).getInstance();
          _twitterStream.addListener(listener);
-				
+         			
          if (keyWords == null || keyWords.length == 0) {
             _twitterStream.sample();
          }
@@ -113,6 +116,13 @@ public class TwitterSampleSpout extends BaseRichSpout {
             _twitterStream.filter(query);
          }
          
+        start = System.nanoTime();
+        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+        Runnable statistics = () -> {
+            long end = (System.nanoTime() - start) / 1000000000;
+            _logger.info("Crawl rate: " + 60*((float)received/end) + " items/min.");
+        };
+        executor.scheduleAtFixedRate(statistics, 1, 1, TimeUnit.MINUTES);
 	}
 			
 	@Override
