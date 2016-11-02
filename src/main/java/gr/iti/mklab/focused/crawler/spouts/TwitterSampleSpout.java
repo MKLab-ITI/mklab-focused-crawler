@@ -116,11 +116,10 @@ public class TwitterSampleSpout extends BaseRichSpout {
             _twitterStream.filter(query);
          }
          
-        start = System.nanoTime();
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
         Runnable statistics = () -> {
-            long end = (System.nanoTime() - start) / 1000000000;
-            _logger.info("Crawl rate: " + 60*((float)received/end) + " items/min.");
+            
+            _logger.info("Crawl rate: " + ((float)received/(++start)) + " items/min.");
         };
         executor.scheduleAtFixedRate(statistics, 1, 1, TimeUnit.MINUTES);
 	}

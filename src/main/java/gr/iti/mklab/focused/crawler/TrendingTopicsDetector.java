@@ -108,13 +108,9 @@ public class TrendingTopicsDetector {
         
     	XMLConfiguration config;
 		try {
-//			if(args.length == 1)
-//				config = new XMLConfiguration(args[0]);
-//			else {
 				ClassLoader classLoader = TrendingTopicsDetector.class.getClassLoader();
 				config = new XMLConfiguration();
                                 config.load(classLoader.getResourceAsStream("dice.topic-detector.xml"));
-//			}
 		}
 		catch(ConfigurationException ex) {
 			ex.printStackTrace();
