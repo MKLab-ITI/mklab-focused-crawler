@@ -35,8 +35,6 @@ public class TrendingTopicsDetector {
 	private static final int WINDOW_LENGTH = 6 * 5 * 60;
 	private static final int EMIT_FREQUENCY = 5 * 60;
     private static final int TOP_N = 20;
-
-
 	
     private static StormTopology createTopology(XMLConfiguration config) throws InterruptedException {
     	
@@ -50,6 +48,7 @@ public class TrendingTopicsDetector {
         String intermediateRankerId = "intermediateRanker";
         String totalRankerId = "finalRanker";
         String minhashRankerId = "minhashRanker";
+        String totalMinhashRankerId = "totalMinhashRanker";
         String topicsMongoDBWriterID = "topicsMongoDBWriter";
         String clustersMongoDBWriterID = "clustersMongoDBWriter";
         String solrUpdaterId = "solrUpdater";
@@ -99,7 +98,8 @@ public class TrendingTopicsDetector {
         // minhash clustering
         builder.setBolt(minhashCounterId, new TermsRollingCountBolt(WINDOW_LENGTH, EMIT_FREQUENCY), 4).fieldsGrouping(wordExtractorId, "minhash", new Fields("minhash"));
         builder.setBolt(minhashRankerId, new IntermediateRankingsBolt(TOP_N, EMIT_FREQUENCY), 1).fieldsGrouping(minhashCounterId, new Fields("obj"));
-        builder.setBolt(clustersMongoDBWriterID, new MongoDBWriter(mongodbHost, mongodbDatabase, clustersCollection), 1).shuffleGrouping(minhashRankerId);
+        builder.setBolt(totalMinhashRankerId, new TotalRankingsBolt(TOP_N, EMIT_FREQUENCY), 1).globalGrouping(minhashRankerId);
+        builder.setBolt(clustersMongoDBWriterID, new MongoDBWriter(mongodbHost, mongodbDatabase, clustersCollection), 1).shuffleGrouping(totalMinhashRankerId);
         builder.setBolt(clustersLabelerID, new LabelerBolt(mongodbHost, mongodbDatabase, clustersCollection, indexService, itemsCollection, "minhash"), 1).shuffleGrouping(clustersMongoDBWriterID);
         
         return builder.createTopology();

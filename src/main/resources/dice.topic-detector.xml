@@ -10,7 +10,7 @@
     
     <redis>
         <hostname>127.0.0.1</hostname>
-        <webPagesChannel>DiceWebPages</webPagesChannel>
+        <itemsChannel>DiceWebPages</itemsChannel>
     </redis>
 
     <mongodb>
