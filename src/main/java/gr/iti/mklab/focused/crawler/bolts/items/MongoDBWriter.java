@@ -11,7 +11,9 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.Values;
 import org.bson.Document;
 
 import com.mongodb.MongoClient;
@@ -65,17 +67,17 @@ public class MongoDBWriter extends BaseRichBolt {
 			
 			Document document = r.toDocument();
 			document.append("timestamp", timestamp);
-			
-			System.out.println(document);
+
 			documents.add(document);
+			
+			_collector.emit(input, new Values(document));
 		} 
 		_collection.insertMany(documents);
-		System.out.println("====================================");
 	}
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		
+		declarer.declare(new Fields("documents"));
 	}
 
 }

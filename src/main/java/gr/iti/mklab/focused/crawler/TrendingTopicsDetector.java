@@ -1,21 +1,16 @@
 package gr.iti.mklab.focused.crawler;
 
-import java.io.File;
-
-import gr.iti.mklab.focused.crawler.bolts.DeserializationBolt;
-import gr.iti.mklab.focused.crawler.bolts.PrinterBolt;
 import gr.iti.mklab.focused.crawler.bolts.SolrBolt;
 import gr.iti.mklab.focused.crawler.bolts.items.EntityExtractionBolt;
 import gr.iti.mklab.focused.crawler.bolts.items.IntermediateRankingsBolt;
+import gr.iti.mklab.focused.crawler.bolts.items.LabelerBolt;
 import gr.iti.mklab.focused.crawler.bolts.items.MinHashExtractorBolt;
 import gr.iti.mklab.focused.crawler.bolts.items.MongoDBWriter;
 import gr.iti.mklab.focused.crawler.bolts.items.TermsExtractorBolt;
 import gr.iti.mklab.focused.crawler.bolts.items.TermsRollingCountBolt;
 import gr.iti.mklab.focused.crawler.bolts.items.TotalRankingsBolt;
-import gr.iti.mklab.focused.crawler.spouts.RedisSpout;
 import gr.iti.mklab.focused.crawler.spouts.TwitterSampleSpout;
 import gr.iti.mklab.framework.client.search.solr.beans.ItemBean;
-import gr.iti.mklab.framework.common.domain.Item;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
@@ -46,7 +41,7 @@ public class TrendingTopicsDetector {
     private static StormTopology createTopology(XMLConfiguration config) throws InterruptedException {
     	
         String spoutId = "itemsInjector";
-        String itemDeserializerId = "itemDeserializer";
+        //String itemDeserializerId = "itemDeserializer";
         String entityExtractionId = "entityExtraction";
         String minhashExtractorId = "minhashExtractor";
         String wordExtractorId = "wordExtractor";
@@ -54,12 +49,16 @@ public class TrendingTopicsDetector {
         String minhashCounterId = "minhashCounter";
         String intermediateRankerId = "intermediateRanker";
         String totalRankerId = "finalRanker";
-        String mongoDBWriterID = "mongoDBWriter";
+        String minhashRankerId = "minhashRanker";
+        String topicsMongoDBWriterID = "topicsMongoDBWriter";
+        String clustersMongoDBWriterID = "clustersMongoDBWriter";
         String solrUpdaterId = "solrUpdater";
+        String topicsLabelerID = "topicsLabeler";
+        String clustersLabelerID = "clustersLabeler";
         
-        String redisHost = config.getString("redis.hostname", "127.0.0.1");
-		int redisPort = config.getInt("redis.port", 6379);		
-		String redisChannel = config.getString("redis.itemsChannel", "items");
+        //String redisHost = config.getString("redis.hostname", "127.0.0.1");
+		//int redisPort = config.getInt("redis.port", 6379);		
+		//String redisChannel = config.getString("redis.itemsChannel", "items");
 		
 		String consumerKey = config.getString("twitter.consumerKey", "");
 		String consumerSecret = config.getString("twitter.consumerSecret", "");
@@ -68,8 +67,9 @@ public class TrendingTopicsDetector {
 		
 		String mongodbHost = config.getString("mongodb.hostname", "160.40.50.207");
 		String mongodbDatabase = config.getString("mongodb.db", "dice");		
-		String mongodbCollection = config.getString("mongodb.collection", "topics");
-			
+		String topicsCollection = config.getString("mongodb.collection", "topics");
+		String clustersCollection = config.getString("mongodb.clusters", "clusters");
+		
 		String indexHostname = config.getString("textindex.host", "xxx.xxx.xxx.xxx");
 		String indexPort = config.getString("textindex.port", "8983");
 		String itemsCollection = config.getString("textindex.collections.items", "Items");
@@ -87,17 +87,20 @@ public class TrendingTopicsDetector {
         builder.setBolt(wordExtractorId, new TermsExtractorBolt(), 2).shuffleGrouping(minhashExtractorId);
         
         // solr indexing
-        //builder.setBolt(solrUpdaterId, new SolrBolt(indexService, itemsCollection, new CountBasedCommit(100), ItemBean.class, "Item")).shuffleGrouping(minhashExtractorId);
+        builder.setBolt(solrUpdaterId, new SolrBolt(indexService, itemsCollection, new CountBasedCommit(100), ItemBean.class, "Item")).shuffleGrouping(minhashExtractorId);
         
         // topic detection bolts
         builder.setBolt(termsCounterId, new TermsRollingCountBolt(WINDOW_LENGTH, EMIT_FREQUENCY), 4).fieldsGrouping(wordExtractorId, "terms", new Fields("term"));
         builder.setBolt(intermediateRankerId, new IntermediateRankingsBolt(TOP_N, EMIT_FREQUENCY), 4).fieldsGrouping(termsCounterId, new Fields("obj"));
         builder.setBolt(totalRankerId, new TotalRankingsBolt(TOP_N, EMIT_FREQUENCY), 1).globalGrouping(intermediateRankerId);
-        builder.setBolt(mongoDBWriterID, new MongoDBWriter(mongodbHost, mongodbDatabase, mongodbCollection), 1).shuffleGrouping(totalRankerId);
+        builder.setBolt(topicsMongoDBWriterID, new MongoDBWriter(mongodbHost, mongodbDatabase, topicsCollection), 1).shuffleGrouping(totalRankerId);
+        builder.setBolt(topicsLabelerID, new LabelerBolt(mongodbHost, mongodbDatabase, topicsCollection, indexService, itemsCollection, "title"), 1).shuffleGrouping(topicsMongoDBWriterID);
         
+        // minhash clustering
         builder.setBolt(minhashCounterId, new TermsRollingCountBolt(WINDOW_LENGTH, EMIT_FREQUENCY), 4).fieldsGrouping(wordExtractorId, "minhash", new Fields("minhash"));
-        builder.setBolt("minhashRanker", new IntermediateRankingsBolt(TOP_N, EMIT_FREQUENCY), 1).fieldsGrouping(minhashCounterId, new Fields("obj"));
-        builder.setBolt("printer", new PrinterBolt()).shuffleGrouping("minhashRanker");
+        builder.setBolt(minhashRankerId, new IntermediateRankingsBolt(TOP_N, EMIT_FREQUENCY), 1).fieldsGrouping(minhashCounterId, new Fields("obj"));
+        builder.setBolt(clustersMongoDBWriterID, new MongoDBWriter(mongodbHost, mongodbDatabase, clustersCollection), 1).shuffleGrouping(minhashRankerId);
+        builder.setBolt(clustersLabelerID, new LabelerBolt(mongodbHost, mongodbDatabase, clustersCollection, indexService, itemsCollection, "minhash"), 1).shuffleGrouping(clustersMongoDBWriterID);
         
         return builder.createTopology();
     }

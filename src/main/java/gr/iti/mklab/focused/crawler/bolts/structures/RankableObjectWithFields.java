@@ -120,7 +120,7 @@ public class RankableObjectWithFields implements Rankable {
 	@Override
 	public Document toDocument() {
 		Document document = new Document();
-		document.append("term", obj);
+		document.append("obj", obj);
 		document.append("value", value);
 		document.append("fields", getFields());
 		

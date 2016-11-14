@@ -17,6 +17,7 @@
         <hostname>127.0.0.1</hostname>
         <db>dice</db>
         <collection>topics</collection>
+        <clusters>topics</clusters>
     </mongodb>
     
     <textindex>
@@ -28,23 +29,6 @@
         	<items>Items</items>
         </collections>
     </textindex>
-  
-    <mediaextractor>
-        <youtube>
-        	<key></key>
-        </youtube>
-       	<facebook>
-        	<accesstoken></accesstoken>
-        </facebook>
-      	<instagram>
-        	<accesstoken></accesstoken>
-        	<accesstokensecret></accesstokensecret>
-        </instagram>
-       	<flickr>
-        	<key></key>
-        	<secret></secret>
-        </flickr>
-    </mediaextractor>
     
     <topology>
         <focusedCrawlerName>DiceTopicDetector</focusedCrawlerName>

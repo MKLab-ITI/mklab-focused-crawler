@@ -8,7 +8,8 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenFilter;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.Tokenizer;
-import org.apache.lucene.analysis.core.WhitespaceTokenizer;
+import org.apache.lucene.analysis.core.LowerCaseFilter;
+import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 
@@ -16,6 +17,7 @@ import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
+
 import java.nio.charset.Charset;
 
 public class MinHash {
@@ -234,7 +236,7 @@ public class MinHash {
     }
 
     /**
-     * Returns a string formatted by bits.
+     * Returns a string representation
      * 
      * @param data
      * @return
@@ -245,6 +247,14 @@ public class MinHash {
         }
         
         return BaseEncoding.base64().encode(data);
+    }
+    
+    public static byte[] toBytes(final String data) {
+        if (data == null) {
+            return null;
+        }
+        
+        return BaseEncoding.base64().decode(data);
     }
     
     /**
@@ -403,6 +413,7 @@ public class MinHash {
 	            final String term = charTermAttribute.toString();
 	            for (int i = 0; i < functionsSize; i++) {
 	            	final HashCode hashCode = hashFunctions[i].hashString(term, Charset.forName("UTF-8"));
+	            	//final HashCode hashCode = hashFunctions[i].hashString(term);
 	                final long value = hashCode.asLong();
 	                if (value < minHashValues[i]) {
 	                    minHashValues[i] = value;
@@ -460,11 +471,31 @@ public class MinHash {
 
 		@Override
 		protected TokenStreamComponents createComponents(String fieldName, Reader reader) {
-	        final Tokenizer tokenizer = new WhitespaceTokenizer(reader);
-	        final TokenStream stream = new MinHashTokenFilter(tokenizer, hashFunctions, hashBit);
+	        final Tokenizer tokenizer = new StandardTokenizer(reader);
+	        final LowerCaseFilter lowerCaseFilter = new LowerCaseFilter(tokenizer);
+	        final TokenStream stream = new MinHashTokenFilter(lowerCaseFilter, hashFunctions, hashBit);
 	        
 	        return new TokenStreamComponents(tokenizer, stream);
 		}
-
 	}
+	
+	public static void main(String...args) throws IOException {
+		
+		
+		MinHash mh = MinHash.getInstance(1, 32);
+		
+		byte[] hashdata1 = mh.calculate("Before you despair of the American people remember that there were multiple thumbs on the scales against HRC.");
+		String minhash1 = MinHash.toString(hashdata1);
+		System.out.println(minhash1);
+
+		
+		byte[] hashdata2 = mh.calculate("before you despair of the american people, remember that there were multiple thumbs on the scales against arr");
+		String minhash2 = MinHash.toString(hashdata2);
+		System.out.println(minhash2);
+		
+		
+		float sim = MinHash.compare(hashdata1, hashdata2);
+		System.out.println(sim);
+	}
+	
 }

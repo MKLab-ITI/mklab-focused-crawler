@@ -120,6 +120,8 @@ public class TwitterSampleSpout extends BaseRichSpout {
         Runnable statistics = () -> {
             
             _logger.info("Crawl rate: " + ((float)received/(++start)) + " items/min.");
+            
+    		_logger.info(failed + " failed to be processed. " + ack + " processed succesfully. " + send + " emitted.");
         };
         executor.scheduleAtFixedRate(statistics, 1, 1, TimeUnit.MINUTES);
 	}
@@ -157,7 +159,6 @@ public class TwitterSampleSpout extends BaseRichSpout {
 	@Override
 	public void fail(Object id) {
 		failed++;
-		_logger.info(id + " failed to be processed.");
 	}
 			
 	@Override
