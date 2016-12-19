@@ -50,7 +50,7 @@ public class DeserializationBolt<K> extends BaseRichBolt {
 		try {
 			receivedTuples++;
 			DBObject obj = (DBObject) input.getValueByField(inputField);
-			K object = WebPage.toObject(obj, c);
+			K object = JSONable.toObject(obj, c);
 			if(object != null) {
 				emmited++;
 				_collector.emit(input, tuple(object));
