@@ -29,6 +29,7 @@ import gr.iti.mklab.focused.crawler.bolts.webpages.WebPageFetcherBolt;
 import gr.iti.mklab.focused.crawler.spouts.RedisSpout;
 import gr.iti.mklab.framework.client.search.solr.beans.MediaItemBean;
 import gr.iti.mklab.framework.client.search.solr.beans.WebPageBean;
+import gr.iti.mklab.framework.common.domain.MediaItem;
 import gr.iti.mklab.framework.common.domain.WebPage;
 
 
@@ -136,8 +137,8 @@ public class DICECrawler {
 			
 			mediaExtraction = new MediaExtractionBolt(config);
 
-			webpagesSolrUpdater = new SolrBolt(indexService, webpagesCollection, new CountBasedCommit(100), WebPageBean.class, "webpages");
-			mediaitemsSolrUpdater = new SolrBolt(indexService, mediaitemsCollection, new CountBasedCommit(100), MediaItemBean.class, "mediaitems");
+			webpagesSolrUpdater = new SolrBolt(indexService, webpagesCollection, new CountBasedCommit(100), WebPageBean.class, WebPage.class, "webpages");
+			mediaitemsSolrUpdater = new SolrBolt(indexService, mediaitemsCollection, new CountBasedCommit(100), MediaItemBean.class, MediaItem.class, "mediaitems");
 			
 		} catch (Exception e) {
 			logger.error(e);

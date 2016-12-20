@@ -6,6 +6,7 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.TupleUtils;
+
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
@@ -39,19 +40,23 @@ public class SolrBolt extends BaseRichBolt {
 
 	private String collection;
 
-	private Class<?> c;
+	private Class<?> beanClass;
+	private Class<?> inputClass;
 	private String inputField;
 
-    public SolrBolt(String service, String collection, Class<?> c, String inputField) {
-        this(service, collection, null, c, inputField);
+    public SolrBolt(String service, String collection, Class<?> beanClass, Class<?> inputClass,
+    		String inputField) {
+        this(service, collection, null, beanClass, inputClass, inputField);
     }
 
-    public SolrBolt(String service, String collection, SolrCommitStrategy commitStgy, Class<?> c, String inputField) {
+    public SolrBolt(String service, String collection, SolrCommitStrategy commitStgy, 
+    		Class<?> beanClass, Class<?> inputClass, String inputField) {
         this.service = service;
         this.collection = collection;
         
         this.commitStgy = commitStgy;
-        this.c = c;
+        this.beanClass = beanClass;
+        this.inputClass = inputClass;
         this.inputField = inputField;
     }
 
@@ -75,9 +80,12 @@ public class SolrBolt extends BaseRichBolt {
             if (!TupleUtils.isTick(tuple)) {    // Don't add tick tuples to the SolrRequest
             	
             	Object data = tuple.getValueByField(inputField);
-            	Constructor<?> constructor = Class.forName(c.getName()).getConstructor(data.getClass());
-				Object k = constructor.newInstance(data);
-            	solrClient.addBean(collection, k);
+            	Class<?> bc = Class.forName(beanClass.getName());
+            	Class<?> ic = Class.forName(inputClass.getName());
+            	Constructor<?> constructor = bc.getConstructor(ic);
+            	
+				Object bean = constructor.newInstance(data);
+            	solrClient.addBean(collection, bean);
             }
             ack(tuple);
         } catch (Exception e) {

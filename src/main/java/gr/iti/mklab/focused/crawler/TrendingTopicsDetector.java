@@ -11,6 +11,7 @@ import gr.iti.mklab.focused.crawler.bolts.items.TermsRollingCountBolt;
 import gr.iti.mklab.focused.crawler.bolts.items.TotalRankingsBolt;
 import gr.iti.mklab.focused.crawler.spouts.TwitterSampleSpout;
 import gr.iti.mklab.framework.client.search.solr.beans.ItemBean;
+import gr.iti.mklab.framework.common.domain.Item;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
@@ -86,7 +87,7 @@ public class TrendingTopicsDetector {
         builder.setBolt(wordExtractorId, new TermsExtractorBolt(), 2).shuffleGrouping(minhashExtractorId);
         
         // solr indexing
-        builder.setBolt(solrUpdaterId, new SolrBolt(indexService, itemsCollection, new CountBasedCommit(100), ItemBean.class, "Item")).shuffleGrouping(minhashExtractorId);
+        builder.setBolt(solrUpdaterId, new SolrBolt(indexService, itemsCollection, new CountBasedCommit(100), ItemBean.class, Item.class, "Item")).shuffleGrouping(minhashExtractorId);
         
         // topic detection bolts
         builder.setBolt(termsCounterId, new TermsRollingCountBolt(WINDOW_LENGTH, EMIT_FREQUENCY), 4).fieldsGrouping(wordExtractorId, "terms", new Fields("term"));

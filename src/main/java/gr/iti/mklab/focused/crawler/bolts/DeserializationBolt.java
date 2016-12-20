@@ -2,7 +2,6 @@ package gr.iti.mklab.focused.crawler.bolts;
 
 import static org.apache.storm.utils.Utils.tuple;
 import gr.iti.mklab.framework.common.domain.JSONable;
-import gr.iti.mklab.framework.common.domain.WebPage;
 
 import java.util.Map;
 
