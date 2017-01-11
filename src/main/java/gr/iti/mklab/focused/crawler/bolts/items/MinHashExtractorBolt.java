@@ -61,6 +61,11 @@ public class MinHashExtractorBolt extends BaseRichBolt {
 			
 			title = StringUtils.join(tokens, " ");
 			
+			if(tokens.isEmpty() || title.equals("")) {
+				_collector.ack(input);
+				return;
+			}
+			
 			byte[] hashdata = minHash.calculate(title);
 			String minhash = MinHash.toString(hashdata);
 			
